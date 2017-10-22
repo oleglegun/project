@@ -1,3 +1,6 @@
 import createHistory from 'history/createBrowserHistory'
 
-export default createHistory()
+// history must be a singleton
+const history = createHistory()
+
+export default history
