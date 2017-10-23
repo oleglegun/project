@@ -1,8 +1,6 @@
 import React from 'react'
 
 class Admin extends React.Component {
-    state = {}
-
     render() {
         return (
             <div>
