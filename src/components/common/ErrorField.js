@@ -1,6 +1,12 @@
 import React from 'react'
+import type { FieldProps } from 'redux-form'
 
-function ErrorField({ input, label, type, meta: { touched, error, warning } }) {
+function ErrorField({
+    input,
+    label,
+    type,
+    meta: { touched, error, warning },
+}: FieldProps) {
     console.log('---', input)
     return (
         <div>

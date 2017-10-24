@@ -1,11 +1,15 @@
+/* @flow */
 import React from 'react'
 import { Field, reduxForm } from 'redux-form'
+import type { FormProps } from 'redux-form'
 import emailValidator from 'email-validator'
 import ErrorField from '../common/ErrorField'
 
-class SignIn extends React.Component {
+type Props = {} & FormProps
+
+class SignIn extends React.Component<Props> {
     render() {
-        const { handleSubmit } = this.props
+        const { handleSubmit, invalid } = this.props
 
         return (
             <div>
@@ -39,7 +43,7 @@ class SignIn extends React.Component {
                         />
                     </div>
                     <div>
-                        <button type="submit" disabled={this.props.invalid}>
+                        <button type="submit" disabled={invalid}>
                             Submit
                         </button>
                     </div>
