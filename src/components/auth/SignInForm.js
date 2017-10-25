@@ -1,7 +1,7 @@
 import React from 'react'
 import { Field, reduxForm } from 'redux-form'
 
-class SignIn extends React.Component {
+class SignInForm extends React.Component {
     render() {
         const { handleSubmit } = this.props
 
@@ -32,4 +32,4 @@ class SignIn extends React.Component {
 
 export default reduxForm({
     form: 'signIn',
-})(SignIn)
+})(SignInForm)

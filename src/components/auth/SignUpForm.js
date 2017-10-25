@@ -7,7 +7,7 @@ import ErrorField from '../common/ErrorField'
 
 type Props = {} & FormProps
 
-class SignIn extends React.Component<Props> {
+class SignUpForm extends React.Component<Props> {
     render() {
         const { handleSubmit, invalid } = this.props
 
@@ -73,4 +73,4 @@ const validate = ({ email, password, passwordRepeat }) => {
 export default reduxForm({
     form: 'signUp',
     validate,
-})(SignIn)
+})(SignUpForm)

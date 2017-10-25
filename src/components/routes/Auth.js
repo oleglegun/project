@@ -1,9 +1,16 @@
+/* @flow */
 import React from 'react'
 import { Route, NavLink } from 'react-router-dom'
-import SignIn from '../auth/SignIn'
-import SignUp from '../auth/SignUp'
+import { connect } from 'react-redux'
+import { signUp } from '../../ducks/auth'
+import SignInForm from '../auth/SignInForm'
+import SignUpForm from '../auth/SignUpForm'
 
-class AuthPage extends React.Component {
+type Props = {
+    signUp: (email: string, password: string) => void,
+}
+
+class AuthPage extends React.Component<Props> {
     render() {
         return (
             <div>
@@ -28,17 +35,20 @@ class AuthPage extends React.Component {
                 </ul>
                 <Route
                     path="/auth/signin"
-                    render={() => <SignIn onSubmit={this.handleSignIn} />}
+                    render={() => <SignInForm onSubmit={this.handleSignIn} />}
                 />
                 <Route
                     path="/auth/signup"
-                    render={() => <SignUp onSubmit={this.handleSignUp} />}
+                    render={() => <SignUpForm onSubmit={this.handleSignUp} />}
                 />
             </div>
         )
     }
+
     handleSignIn = values => console.log('>>>', 'signIn', values)
-    handleSignUp = values => console.log('>>>', 'signUp', values)
+    handleSignUp = ({ email, password }) => {
+        this.props.signUp(email, password)
+    }
 }
 
-export default AuthPage
+export default connect(null, { signUp })(AuthPage)
