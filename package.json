@@ -6,7 +6,7 @@
         "email-validator": "^1.1.1",
         "firebase": "^4.6.0",
         "history": "^4.7.2",
-        "immutable": "^3.8.2",
+        "immutable": "^4.0.0-rc.9",
         "react": "^16.0.0",
         "react-dom": "^16.0.0",
         "react-redux": "^5.0.6",
@@ -36,6 +36,7 @@
         "eslint-plugin-react": "^7.4.0",
         "flow-bin": "^0.57.3",
         "prettier": "^1.7.4",
-        "redux-devtools-extension": "^2.13.2"
+        "redux-devtools-extension": "^2.13.2",
+        "remote-redux-devtools": "^0.5.12"
     }
 }

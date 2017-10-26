@@ -5,8 +5,10 @@ import thunk from 'redux-thunk'
 import reducer from './reducer'
 import history from '../history'
 import { composeWithDevTools } from 'redux-devtools-extension'
+// import { composeWithDevTools } from 'remote-redux-devtools'
 
 // const enhancer = applyMiddleware(routerMiddleware(history), thunk, logger)
+// const composeEnhancers = composeWithDevTools({ realtime: true, port: 10000 })
 
 const enhancer = composeWithDevTools(
     applyMiddleware(routerMiddleware(history), thunk)
