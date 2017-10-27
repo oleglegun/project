@@ -51,4 +51,5 @@ class AuthPage extends React.Component<Props> {
     }
 }
 
+// signUp - thunk action
 export default connect(null, { signUp })(AuthPage)
