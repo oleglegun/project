@@ -5,19 +5,20 @@ import type { FieldProps } from 'redux-form'
 type Props = {
     type: string,
     label: string,
+    id: string,
 } & FieldProps
 
 function ErrorField({
     input,
     type,
     label,
+    id,
     meta: { touched, error, warning },
 }: Props) {
-    console.log('---', input)
     //...input passes all props like focus
     return (
         <div>
-            <input {...input} placeholder={label} type={type} />
+            <input id={id} {...input} placeholder={label} type={type} />
             {touched &&
                 ((error && <span style={{ color: 'red' }}>{error}</span>) ||
                     (warning && <span>{warning}</span>))}

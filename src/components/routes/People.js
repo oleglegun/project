@@ -1,7 +1,7 @@
 /* @flow */
 import React from 'react'
 import { connect } from 'react-redux'
-import AddPeopleForm from '../people/AddPeopleForm'
+import NewPersonForm from '../people/NewPersonForm'
 import { addPerson } from '../../ducks/people'
 
 type Props = {
@@ -14,12 +14,11 @@ type Props = {
 
 class PeoplePage extends React.Component<Props> {
     render() {
-        return <AddPeopleForm onSubmit={this.handleAddPerson} />
+        return <NewPersonForm onSubmit={this.handleAddPerson} />
     }
 
     handleAddPerson = values => {
         const { addPerson } = this.props
-        console.log('---', values)
 
         addPerson({
             firstName: values.firstName,

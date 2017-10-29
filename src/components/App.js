@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
-import { Route } from 'react-router-dom'
+import { Route, NavLink } from 'react-router-dom'
+import ProtectedRoute from './routes/ProtectedRoute'
 import AdminPage from './routes/Admin'
 import AuthPage from './routes/Auth'
 import PeoplePage from './routes/People'
@@ -9,9 +10,26 @@ class App extends Component {
         return (
             <div>
                 <h1>App</h1>
-                <Route path="/admin" component={AdminPage} />
+                <ul>
+                    <li>
+                        <NavLink to="/auth" activeStyle={{ color: 'red' }}>
+                            Auth Page
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink to="/admin" activeStyle={{ color: 'red' }}>
+                            Admin Page
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink to="/people" activeStyle={{ color: 'red' }}>
+                            People Page
+                        </NavLink>
+                    </li>
+                </ul>
+                <ProtectedRoute path="/admin" component={AdminPage} />
+                <ProtectedRoute path="/people" component={PeoplePage} />
                 <Route path="/auth" component={AuthPage} />
-                <Route path="/people" component={PeoplePage} />
             </div>
         )
     }

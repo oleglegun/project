@@ -19,6 +19,7 @@ export const ADD_PERSON_ERROR = `${prefix}/ADD_PERSON_ERROR`
  */
 
 type Person = {
+    id: number,
     firstName: string,
     lastName: string,
     email: string,
@@ -48,7 +49,15 @@ type Dispatch = (action: Action | ThunkAction | Promise<Action>) => void
  *  Reducer
  */
 
-export const ReducerRecord: RecordFactory<State> = Record({
+// Record's default values
+const PersonRecord = Record({
+    id: 0,
+    firstName: '',
+    lastName: '',
+    email: '',
+})
+
+const ReducerRecord: RecordFactory<State> = Record({
     entities: new List(),
     loading: false,
     error: {},
@@ -68,7 +77,7 @@ export default function reducer(
                 state
                     // $FlowFixMe: smth. with payload.person type
                     .update('entities', entities =>
-                        entities.push(payload.person)
+                        entities.push(new PersonRecord({ ...payload.person }))
                     )
                     .set('loading', false)
             )
@@ -86,7 +95,7 @@ export default function reducer(
 /*
  *  Action Creators
  */
-
+// Thunk function is a middleware - doesn't have to be clean
 export const addPerson = (person: Person) => {
     return (dispatch: Dispatch) => {
         dispatch({
@@ -95,7 +104,9 @@ export const addPerson = (person: Person) => {
         })
         dispatch({
             type: ADD_PERSON_SUCCESS,
-            payload: { person },
+            payload: {
+                person: { ...person, id: Date.now() },
+            },
         })
     }
 }

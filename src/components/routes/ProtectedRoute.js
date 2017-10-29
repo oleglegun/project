@@ -12,31 +12,18 @@ type Props = {
 type State = {}
 
 class ProtectedRoute extends React.Component<Props, State> {
-    static defaultProps = {}
-
     state = {}
 
     render() {
-        const { component, ...rest } = this.props
-        return <Route {...rest} render={this.renderRoute} />
-    }
+        const { authorized, component, ...rest } = this.props
 
-    renderRoute = (...args) => {
-        const { authorized } = this.props
-        const AuthorizedComponent = this.props.component
-
-        return authorized ? (
-            // $FlowFixMe
-            <AuthorizedComponent {...args} />
-        ) : (
-            <h2>Access denied</h2>
-        )
+        return authorized && <Route {...rest} component={component} />
     }
 }
 
 export default connect(
     state => ({
-        authorized: !!userSelector(state),
+        authorized: !userSelector(state),
     }),
     null,
     null,
