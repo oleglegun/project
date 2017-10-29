@@ -23,7 +23,7 @@ class ProtectedRoute extends React.Component<Props, State> {
 
 export default connect(
     state => ({
-        authorized: !userSelector(state),
+        authorized: !!userSelector(state),
     }),
     null,
     null,

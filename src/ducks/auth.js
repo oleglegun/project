@@ -104,15 +104,11 @@ export const signUp = (email: string, password: string): ThunkAction => {
     }
 }
 
-console.log('---', 'start')
-// console.log('---', store)
-//
-// setTimeout(() => {
-//     firebase.auth().onAuthStateChanged(user => {
-//         if (!user) return
-//         window.store.dispatch({
-//             type: SIGN_IN_SUCCESS,
-//             payload: { user },
-//         })
-//     })
-// }, 10000)
+firebase.auth().onAuthStateChanged(user => {
+    if (!user) return
+    //TODO remove global window
+    window.store.dispatch({
+        type: SIGN_IN_SUCCESS,
+        payload: { user },
+    })
+})
