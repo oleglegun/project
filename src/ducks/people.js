@@ -2,6 +2,9 @@
 import { appName } from '../config'
 import { Record, List } from 'immutable'
 import type { RecordOf, RecordFactory } from 'immutable'
+import type { SagaIterator } from 'redux-saga'
+import { put, call, takeEvery } from 'redux-saga/effects'
+import { generateId } from './utils'
 
 /*
  *  Constants
@@ -10,6 +13,8 @@ import type { RecordOf, RecordFactory } from 'immutable'
 export const moduleName = 'people'
 const prefix = `${appName}/${moduleName}`
 
+export const ADD_PERSON = `${prefix}/ADD_PERSON`
+export const ADD_PERSON_REQUEST = `${prefix}/ADD_PERSON_REQUEST`
 export const ADD_PERSON_START = `${prefix}/ADD_PERSON_START`
 export const ADD_PERSON_SUCCESS = `${prefix}/ADD_PERSON_SUCCESS`
 export const ADD_PERSON_ERROR = `${prefix}/ADD_PERSON_ERROR`
@@ -18,8 +23,8 @@ export const ADD_PERSON_ERROR = `${prefix}/ADD_PERSON_ERROR`
  *  Types
  */
 
-type Person = {
-    id: number,
+export type Person = {
+    id?: number,
     firstName: string,
     lastName: string,
     email: string,
@@ -31,7 +36,7 @@ type State = {
     error: mixed,
 }
 
-type Action = {
+export type Action = {
     type: string,
     payload: {
         person?: Person,
@@ -43,7 +48,7 @@ type ThunkAction = (
     dispatch: (action: Action | ThunkAction | Promise<Action>) => void,
     getState: () => State
 ) => mixed
-type Dispatch = (action: Action | ThunkAction | Promise<Action>) => void
+// type Dispatch = (action: Action | ThunkAction | Promise<Action>) => void
 
 /*
  *  Reducer
@@ -73,14 +78,13 @@ export default function reducer(
         case ADD_PERSON_START:
             return state.set('loading', true)
         case ADD_PERSON_SUCCESS:
-            return (
-                state
-                    // $FlowFixMe: smth. with payload.person type
-                    .update('entities', entities =>
-                        entities.push(new PersonRecord({ ...payload.person }))
-                    )
-                    .set('loading', false)
-            )
+        case ADD_PERSON:
+            // $FlowFixMe: smth. with payload.person type
+            return state
+                .update('entities', entities =>
+                    entities.push(new PersonRecord({ ...payload.person }))
+                )
+                .set('loading', false)
         case ADD_PERSON_ERROR:
             return state.set('loading', false).set('error', payload.error)
         default:
@@ -95,18 +99,27 @@ export default function reducer(
 /*
  *  Action Creators
  */
-// Thunk function is a middleware - doesn't have to be clean
-export const addPerson = (person: Person) => {
-    return (dispatch: Dispatch) => {
-        dispatch({
-            type: ADD_PERSON_START,
-            payload: {},
-        })
-        dispatch({
-            type: ADD_PERSON_SUCCESS,
-            payload: {
-                person: { ...person, id: Date.now() },
-            },
-        })
-    }
+
+export const addPerson = (person: Person) => ({
+    type: ADD_PERSON_REQUEST,
+    payload: { person },
+})
+
+/*
+ * Sagas
+ */
+
+export function* addPersonSaga(action: Action): SagaIterator {
+    const id = yield call(generateId)
+
+    const effect = put({
+        type: ADD_PERSON,
+        payload: { person: { ...action.payload.person, id } },
+    })
+
+    yield effect
+}
+
+export function* saga(): SagaIterator {
+    yield takeEvery(ADD_PERSON_REQUEST, addPersonSaga)
 }
