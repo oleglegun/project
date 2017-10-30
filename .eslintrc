@@ -1,6 +1,8 @@
 {
     "extends": ["react-app", "prettier"],
-
+    "env": {
+        "jest": true
+    },
     "rules": {
         // Fixes bug "href-no-hash"
         "jsx-a11y/href-no-hash": "off",
