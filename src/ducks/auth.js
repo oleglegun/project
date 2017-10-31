@@ -4,6 +4,8 @@ import { Record } from 'immutable'
 import type { RecordOf, RecordFactory } from 'immutable'
 import firebase from 'firebase'
 import { createSelector } from 'reselect'
+import { call, put, all, take } from 'redux-saga/effects'
+import type { SagaIterator } from 'redux-saga'
 
 /*
  *  Constants
@@ -20,6 +22,7 @@ export const SIGN_IN_SUCCESS = `${prefix}/SIGN_IN_SUCCESS`
 /*
  *  Types
  */
+
 type State = {
     user: mixed,
     loading: boolean,
@@ -34,15 +37,24 @@ type Action = {
     },
 }
 
+type ActionRequest = {
+    type: string,
+    payload: {
+        email: string,
+        password: string,
+    },
+}
+
 type ThunkAction = (
     dispatch: (action: Action | ThunkAction | Promise<Action>) => void,
     getState: () => State
 ) => mixed
-type Dispatch = (action: Action | ThunkAction | Promise<Action>) => void
+// type Dispatch = (action: Action | ThunkAction | Promise<Action>) => void
 
 /*
  *  Reducer
  */
+
 export const ReducerRecord: RecordFactory<State> = Record({
     user: null,
     loading: false,
@@ -71,6 +83,7 @@ export default function reducer(
 /*
  *  Selectors
  */
+
 // $FlowFixMe: state is global here
 export const stateSelector = state => state[moduleName]
 export const userSelector = createSelector(stateSelector, state => state.user)
@@ -78,29 +91,10 @@ export const userSelector = createSelector(stateSelector, state => state.user)
 /*
  *  Action Creators
  */
-// Thunk
-export const signUp = (email: string, password: string): ThunkAction => {
-    return (dispatch: Dispatch) => {
-        dispatch({
-            type: SIGN_UP_START,
-            payload: {},
-        })
-
-        firebase
-            .auth()
-            .createUserWithEmailAndPassword(email, password)
-            .then(
-                user =>
-                    dispatch({
-                        type: SIGN_UP_SUCCESS,
-                        payload: { user },
-                    }),
-                error =>
-                    dispatch({
-                        type: SIGN_UP_ERROR,
-                        payload: { error },
-                    })
-            )
+export const signUp = (email: string, password: string): ActionRequest => {
+    return {
+        type: SIGN_UP_START,
+        payload: { email, password },
     }
 }
 
@@ -112,3 +106,40 @@ firebase.auth().onAuthStateChanged(user => {
         payload: { user },
     })
 })
+
+/*
+ * Sagas
+ */
+
+export function* signUpSaga(): SagaIterator {
+    // we lose context firebase.auth() when calling its method
+    const auth = firebase.auth()
+
+    while (true) {
+        // take waits for needed action
+        const { payload: { email, password } } = yield take(SIGN_UP_START)
+
+        try {
+            // call waits for promise resolve (user)
+            const user = yield call(
+                [auth, auth.createUserWithEmailAndPassword],
+                email,
+                password
+            )
+
+            yield put({
+                type: SIGN_UP_SUCCESS,
+                payload: { user },
+            })
+        } catch (error) {
+            yield put({
+                type: SIGN_UP_ERROR,
+                payload: { error },
+            })
+        }
+    }
+}
+
+export function* saga(): SagaIterator {
+    yield all([signUpSaga()])
+}
