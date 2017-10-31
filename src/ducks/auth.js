@@ -5,6 +5,9 @@ import type { RecordOf, RecordFactory } from 'immutable'
 import firebase from 'firebase'
 import { createSelector } from 'reselect'
 import { call, put, all, take } from 'redux-saga/effects'
+import { push } from 'react-router-redux'
+// $FlowFixMe clearFields: no such named export
+import { clearFields, getFormValues } from 'redux-form'
 import type { SagaIterator } from 'redux-saga'
 
 /*------------------------------------------------------------------------------
@@ -141,6 +144,9 @@ export function* signUpSaga(): SagaIterator {
                 type: SIGN_UP_ERROR,
                 payload: { error },
             })
+
+            // clear form field
+            yield put(clearFields('signIn', false, false, 'email', 'password'))
         }
     }
 }
@@ -161,11 +167,17 @@ export function* signInSaga(): SagaIterator {
                 type: SIGN_IN_SUCCESS,
                 payload: { user },
             })
+
+            // redirect
+            yield put(push('/people'))
         } catch (error) {
             yield put({
                 type: SIGN_IN_ERROR,
                 payload: { error },
             })
+
+            // clear form field
+            yield put(clearFields('signIn', false, false, 'email', 'password'))
         }
     }
 }
