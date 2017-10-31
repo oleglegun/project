@@ -1,11 +1,9 @@
-/* @flow */
 import { addPersonSaga, addPerson, ADD_PERSON } from './people'
 import { generateId } from './utils'
 import { call, put } from 'redux-saga/effects'
-import type { Person, Action } from './people'
 
 it('should add person', () => {
-    const person: Person = {
+    const person = {
         firstName: 'Oleg',
         lastName: 'Legun',
         email: 'test@gmail.com',

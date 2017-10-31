@@ -23,7 +23,7 @@ export const ADD_PERSON_ERROR = `${prefix}/ADD_PERSON_ERROR`
  *  Types
  */
 
-export type Person = {
+type Person = {
     id?: number,
     firstName: string,
     lastName: string,
@@ -36,7 +36,7 @@ type State = {
     error: mixed,
 }
 
-export type Action = {
+type Action = {
     type: string,
     payload: {
         person?: Person,
