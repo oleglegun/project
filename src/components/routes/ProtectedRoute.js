@@ -1,7 +1,7 @@
-/* @flow */
 import * as React from 'react'
 import { Route } from 'react-router-dom'
 import { connect } from 'react-redux'
+import type { ConnectedComponent } from 'react-redux'
 import { userSelector } from '../../ducks/auth'
 
 type Props = {

@@ -2,12 +2,13 @@
 import React from 'react'
 import { Route, NavLink } from 'react-router-dom'
 import { connect } from 'react-redux'
-import { signUp } from '../../ducks/auth'
+import { signUp, signIn } from '../../ducks/auth'
 import SignInForm from '../auth/SignInForm'
 import SignUpForm from '../auth/SignUpForm'
 
 type Props = {
     signUp: (email: string, password: string) => void,
+    signIn: (email: string, password: string) => void,
 }
 
 class AuthPage extends React.Component<Props> {
@@ -45,11 +46,12 @@ class AuthPage extends React.Component<Props> {
         )
     }
 
-    handleSignIn = values => console.log('>>>', 'signIn', values)
+    handleSignIn = ({ email, password }) => {
+        this.props.signIn(email, password)
+    }
     handleSignUp = ({ email, password }) => {
         this.props.signUp(email, password)
     }
 }
 
-// signUp - thunk action
-export default connect(null, { signUp })(AuthPage)
+export default connect(null, { signUp, signIn })(AuthPage)
