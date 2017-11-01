@@ -5,9 +5,9 @@ import type { RecordOf, RecordFactory } from 'immutable'
 import firebase from 'firebase'
 import { createSelector } from 'reselect'
 import { call, put, all, take } from 'redux-saga/effects'
-import { push } from 'react-router-redux'
+import { replace } from 'react-router-redux'
 // $FlowFixMe clearFields: no such named export
-import { clearFields, getFormValues } from 'redux-form'
+import { clearFields } from 'redux-form'
 import type { SagaIterator } from 'redux-saga'
 
 /*------------------------------------------------------------------------------
@@ -17,11 +17,11 @@ import type { SagaIterator } from 'redux-saga'
 export const moduleName = 'auth'
 const prefix = `${appName}/${moduleName}`
 
-export const SIGN_UP_START = `${prefix}/SIGN_UP_START`
+export const SIGN_UP_REQUEST = `${prefix}/SIGN_UP_REQUEST`
 export const SIGN_UP_SUCCESS = `${prefix}/SIGN_UP_SUCCESS`
 export const SIGN_UP_ERROR = `${prefix}/SIGN_UP_ERROR`
 
-export const SIGN_IN_START = `${prefix}/SIGN_IN_START`
+export const SIGN_IN_REQUEST = `${prefix}/SIGN_IN_REQUEST`
 export const SIGN_IN_SUCCESS = `${prefix}/SIGN_IN_SUCCESS`
 export const SIGN_IN_ERROR = `${prefix}/SIGN_IN_ERROR`
 
@@ -74,8 +74,8 @@ export default function reducer(
     const { type, payload } = action
 
     switch (type) {
-        case SIGN_UP_START:
-        case SIGN_IN_START:
+        case SIGN_UP_REQUEST:
+        case SIGN_IN_REQUEST:
             return state.set('loading', true)
         case SIGN_UP_SUCCESS:
         case SIGN_IN_SUCCESS:
@@ -102,14 +102,14 @@ export const userSelector = createSelector(stateSelector, state => state.user)
 
 export const signUp = (email: string, password: string): ActionRequest => {
     return {
-        type: SIGN_UP_START,
+        type: SIGN_UP_REQUEST,
         payload: { email, password },
     }
 }
 
 export const signIn = (email: string, password: string): ActionRequest => {
     return {
-        type: SIGN_IN_START,
+        type: SIGN_IN_REQUEST,
         payload: { email, password },
     }
 }
@@ -124,7 +124,7 @@ export function* signUpSaga(): SagaIterator {
 
     while (true) {
         // take waits for needed action
-        const { payload }: ActionRequest = yield take(SIGN_UP_START)
+        const { payload }: ActionRequest = yield take(SIGN_UP_REQUEST)
 
         try {
             // call waits for promise resolve (user)
@@ -155,21 +155,24 @@ export function* signInSaga(): SagaIterator {
     const auth = firebase.auth()
 
     while (true) {
-        try {
-            const { payload }: ActionRequest = yield take(SIGN_IN_START)
+        const { payload }: ActionRequest = yield take(SIGN_IN_REQUEST)
 
-            const user = yield call(
+        try {
+            yield call(
                 [auth, auth.signInWithEmailAndPassword],
                 payload.email,
                 payload.password
             )
-            yield put({
-                type: SIGN_IN_SUCCESS,
-                payload: { user },
-            })
-
-            // redirect
-            yield put(push('/people'))
+            // Or
+            // const user = yield call(
+            //     [auth, auth.signInWithEmailAndPassword],
+            //     payload.email,
+            //     payload.password
+            // )
+            // yield put({
+            //     type: SIGN_IN_SUCCESS,
+            //     payload: { user },
+            // })
         } catch (error) {
             yield put({
                 type: SIGN_IN_ERROR,
@@ -182,8 +185,29 @@ export function* signInSaga(): SagaIterator {
     }
 }
 
-export function* authStateChangeWatcherSaga(): SagaIterator {}
+export function* watchStatusChangeSaga(): SagaIterator {
+    while (true) {
+        yield take(SIGN_IN_SUCCESS)
+
+        yield put(replace('/people'))
+    }
+}
+//
+// export function * watchAuthStateChangeSaga() : SagaIterator {
+//     while(true) {
+//
+//     }
+// }
 
 export function* saga(): SagaIterator {
-    yield all([signUpSaga(), signInSaga(), authStateChangeWatcherSaga()])
+    yield all([signUpSaga(), signInSaga(), watchStatusChangeSaga()])
 }
+
+firebase.auth().onAuthStateChanged(user => {
+    if (!user) return
+    //TODO remove global window
+    window.store.dispatch({
+        type: SIGN_IN_SUCCESS,
+        payload: { user },
+    })
+})

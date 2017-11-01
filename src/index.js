@@ -6,5 +6,8 @@ import registerServiceWorker from './registerServiceWorker'
 // Run Firebase initialization
 import './config'
 
+// import { saveEventsToFB } from './mocks'
+// saveEventsToFB()
+
 ReactDOM.render(<Root />, document.getElementById('root'))
 registerServiceWorker()
