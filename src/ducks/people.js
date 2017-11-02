@@ -107,7 +107,7 @@ export function* addPersonSaga(action: Action): SagaIterator {
     const id = yield call(generateId)
 
     const effect = put({
-        type: ADD_PERSON,
+        type: ADD_PERSON_SUCCESS,
         payload: { person: { ...action.payload.person, id } },
     })
 

@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { Route, NavLink } from 'react-router-dom'
-import ProtectedRoute from './routes/ProtectedRoute'
+import ProtectedRoute from './common/ProtectedRoute'
 import AdminPage from './routes/Admin'
 import AuthPage from './routes/Auth'
 import PeoplePage from './routes/People'

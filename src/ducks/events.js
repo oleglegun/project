@@ -6,6 +6,7 @@ import { fbToEntities } from './utils'
 import { Record, OrderedMap } from 'immutable'
 import type { RecordOf, RecordFactory } from 'immutable'
 import type { SagaIterator } from 'redux-saga'
+import { createSelector } from 'reselect'
 
 /*------------------------------------------------------------------------------
 /*  Constants
@@ -91,6 +92,24 @@ export default function reducer(
 /*  Selectors
 /*----------------------------------------------------------------------------*/
 
+export const stateSelector = (state: { events: State }): State =>
+    state[moduleName]
+export const entitiesSelector = createSelector(
+    stateSelector,
+    state => state.entities
+)
+export const loadingSelector = createSelector(
+    stateSelector,
+    state => state.loading
+)
+export const loadedSelector = createSelector(
+    stateSelector,
+    state => state.loaded
+)
+export const eventListSelector = createSelector(entitiesSelector, entities =>
+    entities.valueSeq().toArray()
+)
+
 /*------------------------------------------------------------------------------
 /*  Action Creators
 /*----------------------------------------------------------------------------*/
@@ -107,7 +126,10 @@ export function fetchAllEvents(): Action {
 /*----------------------------------------------------------------------------*/
 
 export function* fetchAllSaga(): SagaIterator {
-    const ref = firebase.database().ref('/events')
+    const ref = firebase
+        .database()
+        .ref('/events')
+        .limitToFirst(5)
 
     yield put({
         type: FETCH_ALL_START,
@@ -124,3 +146,5 @@ export function* fetchAllSaga(): SagaIterator {
 export function* saga(): SagaIterator {
     yield all([takeEvery(FETCH_ALL_REQUEST, fetchAllSaga)])
 }
+
+window.firebase = firebase
