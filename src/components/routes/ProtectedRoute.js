@@ -1,3 +1,4 @@
+/* @flow */
 import * as React from 'react'
 import { Route } from 'react-router-dom'
 import { connect } from 'react-redux'
@@ -15,11 +16,12 @@ class ProtectedRoute extends React.Component<Props, State> {
 
     render() {
         const { authorized, component, ...rest } = this.props
-
+        // $FlowFixMe
         return authorized && <Route {...rest} component={component} />
     }
 }
 
+// $FlowFixMe
 export default connect(
     state => ({
         authorized: !!userSelector(state),

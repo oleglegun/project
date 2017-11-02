@@ -1,14 +1,12 @@
 /* @flow */
 import { appName } from '../config'
-import { Record } from 'immutable'
-import type { RecordOf, RecordFactory } from 'immutable'
+import { Record, type RecordOf, type RecordFactory } from 'immutable'
 import firebase from 'firebase'
 import { createSelector } from 'reselect'
 import { call, put, all, take } from 'redux-saga/effects'
 import { replace } from 'react-router-redux'
 // $FlowFixMe clearFields: no such named export
-import { clearFields } from 'redux-form'
-import type { SagaIterator } from 'redux-saga'
+import { clearFields, type SagaIterator } from 'redux-form'
 
 /*------------------------------------------------------------------------------
 /*  Constants
@@ -51,24 +49,24 @@ type ActionRequest = {
     },
 }
 
-type ThunkAction = (
-    dispatch: (action: Action | ThunkAction | Promise<Action>) => void,
-    getState: () => State
-) => mixed
+// type ThunkAction = (
+//     dispatch: (action: Action | ThunkAction | Promise<Action>) => void,
+//     getState: () => State
+// ) => mixed
 // type Dispatch = (action: Action | ThunkAction | Promise<Action>) => void
 
 /*------------------------------------------------------------------------------
 /*  Reducer
 /*----------------------------------------------------------------------------*/
 
-export const ReducerRecord: RecordFactory<State> = Record({
+export const ReducerRecordFactory: RecordFactory<State> = Record({
     user: null,
     loading: false,
     error: null,
 })
 
 export default function reducer(
-    state: RecordOf<State> = ReducerRecord(),
+    state: RecordOf<State> = ReducerRecordFactory(),
     action: Action
 ) {
     const { type, payload } = action
@@ -189,7 +187,7 @@ export function* watchStatusChangeSaga(): SagaIterator {
     while (true) {
         yield take(SIGN_IN_SUCCESS)
 
-        yield put(replace('/people'))
+        yield put(replace('/events'))
     }
 }
 //

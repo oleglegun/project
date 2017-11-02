@@ -1,14 +1,14 @@
 /* @flow */
 import { appName } from '../config'
 import { Record, List } from 'immutable'
-import type { RecordOf, RecordFactory } from 'immutable'
-import type { SagaIterator } from 'redux-saga'
 import { put, call, takeEvery } from 'redux-saga/effects'
 import { generateId } from './utils'
+import type { RecordOf, RecordFactory } from 'immutable'
+import type { SagaIterator } from 'redux-saga'
 
-/*
- *  Constants
- */
+/*------------------------------------------------------------------------------
+/*  Constants
+/*----------------------------------------------------------------------------*/
 
 export const moduleName = 'people'
 const prefix = `${appName}/${moduleName}`
@@ -19,9 +19,9 @@ export const ADD_PERSON_START = `${prefix}/ADD_PERSON_START`
 export const ADD_PERSON_SUCCESS = `${prefix}/ADD_PERSON_SUCCESS`
 export const ADD_PERSON_ERROR = `${prefix}/ADD_PERSON_ERROR`
 
-/*
- *  Types
- */
+/*------------------------------------------------------------------------------
+/*  Types
+/*----------------------------------------------------------------------------*/
 
 type Person = {
     id?: number,
@@ -44,15 +44,9 @@ type Action = {
     },
 }
 
-type ThunkAction = (
-    dispatch: (action: Action | ThunkAction | Promise<Action>) => void,
-    getState: () => State
-) => mixed
-// type Dispatch = (action: Action | ThunkAction | Promise<Action>) => void
-
-/*
- *  Reducer
- */
+/*------------------------------------------------------------------------------
+/*  Reducer
+/*----------------------------------------------------------------------------*/
 
 // Record's default values
 const PersonRecord = Record({
@@ -92,22 +86,22 @@ export default function reducer(
     }
 }
 
-/*
- *  Selectors
- */
+/*------------------------------------------------------------------------------
+/*  Selectors
+/*----------------------------------------------------------------------------*/
 
-/*
- *  Action Creators
- */
+/*------------------------------------------------------------------------------
+/*  Action Creators
+/*----------------------------------------------------------------------------*/
 
 export const addPerson = (person: Person) => ({
     type: ADD_PERSON_REQUEST,
     payload: { person },
 })
 
-/*
- * Sagas
- */
+/*------------------------------------------------------------------------------
+/*  Sagas
+/*----------------------------------------------------------------------------*/
 
 export function* addPersonSaga(action: Action): SagaIterator {
     const id = yield call(generateId)
