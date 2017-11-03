@@ -8,6 +8,7 @@ import {
     loadingSelector,
     loadedSelector,
 } from '../../ducks/events'
+import type { EventRecord } from '../../ducks/events'
 
 type Props = {
     fetchAllEvents: () => void,
@@ -18,7 +19,7 @@ type Props = {
 
 type State = {}
 
-class EventsTable extends React.Component<Props, State> {
+export class EventsTable extends React.Component<Props, State> {
     static defaultProps = {}
 
     state = {}
@@ -34,9 +35,9 @@ class EventsTable extends React.Component<Props, State> {
             <table>
                 <thead>
                     <tr>
-                        <td>title</td>
-                        <td>when</td>
-                        <td>where</td>
+                        <td>Title</td>
+                        <td>When</td>
+                        <td>Where</td>
                     </tr>
                 </thead>
                 <tbody>{this.getRows()}</tbody>
@@ -46,8 +47,8 @@ class EventsTable extends React.Component<Props, State> {
 
     getRows = () => this.props.events.map(this.getRow)
 
-    getRow = event => (
-        <tr key={event.uid}>
+    getRow = (event: EventRecord) => (
+        <tr key={event.uid} className="EventsTable__row">
             <td>{event.title}</td>
             <td>{event.when}</td>
             <td>{event.where}</td>

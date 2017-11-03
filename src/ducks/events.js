@@ -24,7 +24,7 @@ export const FETCH_ALL_SUCCESS = `${prefix}/FETCH_ALL_SUCCESS`
 /*  Types
 /*----------------------------------------------------------------------------*/
 
-type Event = {
+export type Event = {
     title: string,
     url: string,
     when: string,
@@ -33,10 +33,7 @@ type Event = {
     submissionDeadline: string,
 }
 
-type EventRecord = {
-    uid: ?string,
-    ...Event,
-}
+export type EventRecord = { uid: string } & Event
 
 type State = {
     loading: boolean,
@@ -121,6 +118,8 @@ export function fetchAllEvents(): Action {
         payload: {},
     }
 }
+
+
 
 /*------------------------------------------------------------------------------
 /*  Sagas

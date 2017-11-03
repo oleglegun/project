@@ -2,9 +2,9 @@
 import * as React from 'react'
 import Spinner from 'react-spinkit'
 
-type Props = {}
+// type Props = {}
 
-function Loader({  }: Props) {
+function Loader() {
     return (
         <div>
             <Spinner name="wave" color="gray" />
