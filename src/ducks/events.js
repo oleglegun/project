@@ -1,6 +1,7 @@
 /* @flow */
 import firebase from 'firebase'
 import { all, takeEvery, call, put } from 'redux-saga/effects'
+import { delay } from 'redux-saga'
 import { appName } from '../config'
 import { fbToEntities } from './utils'
 import { Record, OrderedMap } from 'immutable'
@@ -134,6 +135,8 @@ export function* fetchAllSaga(): SagaIterator {
     yield put({
         type: FETCH_ALL_START,
     })
+
+    yield delay(3000)
 
     const snapshot = yield call([ref, ref.once], 'value')
 

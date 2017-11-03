@@ -1,6 +1,7 @@
 /* @flow */
 import * as React from 'react'
 import { connect } from 'react-redux'
+import Loader from '../common/Loader'
 import {
     fetchAllEvents,
     eventListSelector,
@@ -27,6 +28,8 @@ class EventsTable extends React.Component<Props, State> {
     }
 
     render() {
+        if (this.props.loading) return <Loader />
+
         return (
             <table>
                 <thead>
