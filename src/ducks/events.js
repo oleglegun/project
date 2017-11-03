@@ -4,7 +4,7 @@ import { all, takeEvery, call, put } from 'redux-saga/effects'
 import { delay } from 'redux-saga'
 import { appName } from '../config'
 import { fbToEntities } from './utils'
-import { Record, OrderedMap } from 'immutable'
+import { Record, OrderedMap, OrderedSet } from 'immutable'
 import type { RecordOf, RecordFactory } from 'immutable'
 import type { SagaIterator } from 'redux-saga'
 import { createSelector } from 'reselect'
@@ -19,6 +19,8 @@ const prefix = `${appName}/${moduleName}`
 export const FETCH_ALL_REQUEST = `${prefix}/FETCH_ALL_REQUEST`
 export const FETCH_ALL_START = `${prefix}/FETCH_ALL_START`
 export const FETCH_ALL_SUCCESS = `${prefix}/FETCH_ALL_SUCCESS`
+
+export const SELECT_EVENT = `${prefix}/SELECT_EVENT`
 
 /*------------------------------------------------------------------------------
 /*  Types
@@ -40,11 +42,12 @@ type State = {
     loaded: boolean,
     // OrderedMap - we need to remember events order
     entities: OrderedMap<string, EventRecord>,
+    selected: OrderedSet<string>,
 }
 
 type Action = {
     type: string,
-    payload: {},
+    payload: { uid: string },
 }
 
 /*------------------------------------------------------------------------------
@@ -55,6 +58,7 @@ export const ReducerRecordFactory: RecordFactory<State> = Record({
     loading: false,
     loaded: false,
     entities: OrderedMap(),
+    selected: OrderedSet(),
 })
 
 const EventRecordFactory: RecordFactory<EventRecord> = Record({
@@ -71,7 +75,7 @@ export default function reducer(
     state: RecordOf<State> = ReducerRecordFactory(),
     action: Action
 ) {
-    const { type, payload }: Action = action
+    const { type, payload } = action
 
     switch (type) {
         case FETCH_ALL_START:
@@ -81,6 +85,10 @@ export default function reducer(
                 .set('loading', false)
                 .set('loaded', true)
                 .set('entities', fbToEntities(payload, EventRecordFactory))
+        case SELECT_EVENT:
+            return state.update('selected', selected =>
+                selected.add(payload.uid)
+            )
         default:
             return state
     }
@@ -96,6 +104,10 @@ export const entitiesSelector = createSelector(
     stateSelector,
     state => state.entities
 )
+export const selectedSelector = createSelector(
+    stateSelector,
+    state => state.selected
+)
 export const loadingSelector = createSelector(
     stateSelector,
     state => state.loading
@@ -107,19 +119,32 @@ export const loadedSelector = createSelector(
 export const eventListSelector = createSelector(entitiesSelector, entities =>
     entities.valueSeq().toArray()
 )
+export const selectedEventListSelector = createSelector(
+    entitiesSelector,
+    selectedSelector,
+    (entities, selected) => {
+        // $FlowFixMe
+        return selected.toArray().map(uid => entities.get(uid).toJS())
+    }
+)
 
 /*------------------------------------------------------------------------------
 /*  Action Creators
 /*----------------------------------------------------------------------------*/
 
-export function fetchAllEvents(): Action {
+export function fetchAllEvents() {
     return {
         type: FETCH_ALL_REQUEST,
         payload: {},
     }
 }
 
-
+export function selectEvent(uid: string) {
+    return {
+        type: SELECT_EVENT,
+        payload: { uid },
+    }
+}
 
 /*------------------------------------------------------------------------------
 /*  Sagas

@@ -7,12 +7,16 @@ import {
     eventListSelector,
     loadingSelector,
     loadedSelector,
+    selectEvent,
+    selectedEventListSelector,
 } from '../../ducks/events'
 import type { EventRecord } from '../../ducks/events'
 
 type Props = {
     fetchAllEvents: () => void,
+    selectEvent: (uid: string) => void,
     events: [],
+    selectedEvents: Array<EventRecord>,
     loading: boolean,
     loaded: boolean,
 }
@@ -32,26 +36,33 @@ export class EventsTable extends React.Component<Props, State> {
         if (this.props.loading) return <Loader />
 
         return (
-            <table>
-                <thead>
-                    <tr>
-                        <td>Title</td>
-                        <td>When</td>
-                        <td>Where</td>
-                    </tr>
-                </thead>
-                <tbody>{this.getRows()}</tbody>
-            </table>
+            <div>
+                Selected: {this.props.selectedEvents.length}
+                <table>
+                    <thead>
+                        <tr>
+                            <td>Title</td>
+                            <td>When</td>
+                            <td>Where</td>
+                        </tr>
+                    </thead>
+                    <tbody>{this.getRows()}</tbody>
+                </table>
+            </div>
         )
     }
 
     getRows = () => this.props.events.map(this.getRow)
 
-    getRow = (event: EventRecord) => (
-        <tr key={event.uid} className="EventsTable__row">
-            <td>{event.title}</td>
-            <td>{event.when}</td>
-            <td>{event.where}</td>
+    getRow = ({ uid, title, when, where }: EventRecord) => (
+        <tr
+            key={uid}
+            onClick={() => this.props.selectEvent(uid)}
+            className="EventsTable__row"
+        >
+            <td>{title}</td>
+            <td>{when}</td>
+            <td>{where}</td>
         </tr>
     )
 }
@@ -60,9 +71,10 @@ export default connect(
     state => {
         return {
             events: eventListSelector(state),
+            selectedEvents: selectedEventListSelector(state),
             loading: loadingSelector(state),
             loaded: loadedSelector(state),
         }
     },
-    { fetchAllEvents }
+    { fetchAllEvents, selectEvent }
 )(EventsTable)
