@@ -1,6 +1,6 @@
 /* @flow */
 import * as React from 'react'
-import EventsTable from '../events/EventTableVirtualized'
+import EventsTable from '../events/EventInfiniteLoader'
 
 type Props = {}
 

@@ -20,6 +20,10 @@ export const FETCH_ALL_REQUEST = `${prefix}/FETCH_ALL_REQUEST`
 export const FETCH_ALL_START = `${prefix}/FETCH_ALL_START`
 export const FETCH_ALL_SUCCESS = `${prefix}/FETCH_ALL_SUCCESS`
 
+export const FETCH_BATCH_REQUEST = `${prefix}/FETCH_BATCH_REQUEST`
+export const FETCH_BATCH_START = `${prefix}/FETCH_BATCH_START`
+export const FETCH_BATCH_SUCCESS = `${prefix}/FETCH_BATCH_SUCCESS`
+
 export const SELECT_EVENT = `${prefix}/SELECT_EVENT`
 
 /*------------------------------------------------------------------------------
@@ -48,6 +52,14 @@ type State = {
 type Action = {
     type: string,
     payload: { uid: string },
+}
+
+type FetchBatchRequestAction = {
+    type: string,
+    payload: {
+        quantity: number,
+        startAt: string,
+    },
 }
 
 /*------------------------------------------------------------------------------
@@ -79,12 +91,20 @@ export default function reducer(
 
     switch (type) {
         case FETCH_ALL_START:
+        case FETCH_BATCH_START:
             return state.set('loading', true)
         case FETCH_ALL_SUCCESS:
             return state
                 .set('loading', false)
                 .set('loaded', true)
                 .set('entities', fbToEntities(payload, EventRecordFactory))
+        case FETCH_BATCH_SUCCESS:
+            return state
+                .set('loading', false)
+                .set('loaded', true)
+                .update('entities', entities =>
+                    entities.merge(fbToEntities(payload, EventRecordFactory))
+                )
         case SELECT_EVENT:
             return state.update('selected', selected =>
                 selected.add(payload.uid)
@@ -116,7 +136,7 @@ export const loadedSelector = createSelector(
     stateSelector,
     state => state.loaded
 )
-// Generally .toArray() always returns new pointer, causing component to 
+// Generally .toArray() always returns new pointer, causing component to
 // re-render, but selector make possible to return the same object
 export const eventListSelector = createSelector(entitiesSelector, entities =>
     entities.valueSeq().toArray()
@@ -124,10 +144,15 @@ export const eventListSelector = createSelector(entitiesSelector, entities =>
 export const selectedEventListSelector = createSelector(
     entitiesSelector,
     selectedSelector,
-    (entities, selected) => {
+    (entities, selected) =>
         // $FlowFixMe
-        return selected.toArray().map(uid => entities.get(uid).toJS())
-    }
+        selected.toArray().map(uid => entities.get(uid).toJS())
+)
+
+export const lastEntityUIDSelector = createSelector(
+    entitiesSelector,
+    // $FlowFixMe
+    entities => entities.last() && entities.last().uid
 )
 
 /*------------------------------------------------------------------------------
@@ -138,6 +163,16 @@ export function fetchAllEvents() {
     return {
         type: FETCH_ALL_REQUEST,
         payload: {},
+    }
+}
+
+export function fetchBatchEvents(
+    quantity: number,
+    startAt: string
+): FetchBatchRequestAction {
+    return {
+        type: FETCH_BATCH_REQUEST,
+        payload: { quantity, startAt },
     }
 }
 
@@ -172,8 +207,43 @@ export function* fetchAllSaga(): SagaIterator {
     })
 }
 
+export function* fetchBatchSaga(action: FetchBatchRequestAction): SagaIterator {
+    const { payload: { quantity, startAt } } = action
+
+    yield put({
+        type: FETCH_BATCH_START,
+    })
+
+    let ref
+    // If no start uid received
+    if (!!startAt) {
+        ref = firebase
+            .database()
+            .ref('/events')
+            .orderByKey()
+            .startAt(startAt)
+            .limitToFirst(quantity + 1)
+    } else {
+        ref = firebase
+            .database()
+            .ref('/events')
+            .orderByKey()
+            .limitToFirst(quantity + 1)
+    }
+
+    const snapshot = yield call([ref, ref.once], 'value')
+
+    yield put({
+        type: FETCH_BATCH_SUCCESS,
+        payload: snapshot.val(),
+    })
+}
+
 export function* saga(): SagaIterator {
-    yield all([takeEvery(FETCH_ALL_REQUEST, fetchAllSaga)])
+    yield all([
+        takeEvery(FETCH_ALL_REQUEST, fetchAllSaga),
+        takeEvery(FETCH_BATCH_REQUEST, fetchBatchSaga),
+    ])
 }
 
 window.firebase = firebase

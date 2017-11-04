@@ -31,7 +31,7 @@ class EventTableVirtualized extends React.Component<Props, State> {
     state = {}
 
     componentDidMount() {
-        this.props.fetchAllEvents()
+        // this.props.fetchAllEvents()
     }
 
     render() {
