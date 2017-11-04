@@ -1,4 +1,4 @@
-import { addPersonSaga, addPerson, ADD_PERSON } from './people'
+import { addPersonSaga, addPerson, ADD_PERSON_SUCCESS } from './people'
 import { generateId } from './utils'
 import { call, put } from 'redux-saga/effects'
 
@@ -21,7 +21,7 @@ it('should add person', () => {
 
     expect(gen.next(id).value).toEqual(
         put({
-            type: ADD_PERSON,
+            type: ADD_PERSON_SUCCESS,
             payload: {
                 person: { ...person, id },
             },

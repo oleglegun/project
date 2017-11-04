@@ -116,6 +116,8 @@ export const loadedSelector = createSelector(
     stateSelector,
     state => state.loaded
 )
+// Generally .toArray() always returns new pointer, causing component to 
+// re-render, but selector make possible to return the same object
 export const eventListSelector = createSelector(entitiesSelector, entities =>
     entities.valueSeq().toArray()
 )
@@ -160,7 +162,7 @@ export function* fetchAllSaga(): SagaIterator {
         type: FETCH_ALL_START,
     })
 
-    yield delay(3000)
+    yield delay(1000)
 
     const snapshot = yield call([ref, ref.once], 'value')
 
