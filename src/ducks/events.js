@@ -1,6 +1,6 @@
 /* @flow */
 import firebase from 'firebase'
-import { all, takeEvery, call, put } from 'redux-saga/effects'
+import { all, takeEvery, take, call, put, select } from 'redux-saga/effects'
 import { delay } from 'redux-saga'
 import { appName } from '../config'
 import { fbToEntities } from './utils'
@@ -23,6 +23,10 @@ export const FETCH_ALL_SUCCESS = `${prefix}/FETCH_ALL_SUCCESS`
 export const FETCH_BATCH_REQUEST = `${prefix}/FETCH_BATCH_REQUEST`
 export const FETCH_BATCH_START = `${prefix}/FETCH_BATCH_START`
 export const FETCH_BATCH_SUCCESS = `${prefix}/FETCH_BATCH_SUCCESS`
+
+export const FETCH_LAZY_REQUEST = `${prefix}/FETCH_LAZY_REQUEST`
+export const FETCH_LAZY_START = `${prefix}/FETCH_LAZY_START`
+export const FETCH_LAZY_SUCCESS = `${prefix}/FETCH_LAZY_SUCCESS`
 
 export const SELECT_EVENT = `${prefix}/SELECT_EVENT`
 
@@ -92,6 +96,7 @@ export default function reducer(
     switch (type) {
         case FETCH_ALL_START:
         case FETCH_BATCH_START:
+        case FETCH_LAZY_START:
             return state.set('loading', true)
         case FETCH_ALL_SUCCESS:
             return state
@@ -105,6 +110,17 @@ export default function reducer(
                 .update('entities', entities =>
                     entities.merge(fbToEntities(payload, EventRecordFactory))
                 )
+        case FETCH_LAZY_SUCCESS:
+            return (
+                state
+                    .set('loading', false)
+                    .mergeIn(
+                        ['entities'],
+                        fbToEntities(payload, EventRecordFactory)
+                    )
+                    // < 10 events was loaded - that was the last batch
+                    .set('loaded', Object.keys(payload).length < 10)
+            )
         case SELECT_EVENT:
             return state.update('selected', selected =>
                 selected.add(payload.uid)
@@ -176,6 +192,12 @@ export function fetchBatchEvents(
     }
 }
 
+export function fetchLazy() {
+    return {
+        type: FETCH_LAZY_REQUEST,
+    }
+}
+
 export function selectEvent(uid: string) {
     return {
         type: SELECT_EVENT,
@@ -239,10 +261,43 @@ export function* fetchBatchSaga(action: FetchBatchRequestAction): SagaIterator {
     })
 }
 
+export const fetchLazySaga = function*(): SagaIterator {
+    while (true) {
+        yield take(FETCH_LAZY_REQUEST)
+
+        const state = yield select(stateSelector)
+
+        // If loading - cancel current action
+        if (state.loading || state.loaded) continue
+        // If all data loaded - finish generator
+        if (state.loaded && console.log('loaded! finishing!')) return
+
+        yield put({
+            type: FETCH_LAZY_START,
+        })
+        const lastEvent = state.entities.last()
+
+        const ref = firebase
+            .database()
+            .ref('events')
+            .orderByKey()
+            .limitToFirst(10)
+            .startAt(lastEvent ? lastEvent.uid : '')
+
+        const data = yield call([ref, ref.once], 'value')
+
+        yield put({
+            type: FETCH_LAZY_SUCCESS,
+            payload: data.val(),
+        })
+    }
+}
+
 export function* saga(): SagaIterator {
     yield all([
         takeEvery(FETCH_ALL_REQUEST, fetchAllSaga),
         takeEvery(FETCH_BATCH_REQUEST, fetchBatchSaga),
+        fetchLazySaga(),
     ])
 }
 

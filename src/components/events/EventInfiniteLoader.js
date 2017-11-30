@@ -3,19 +3,18 @@ import * as React from 'react'
 import { connect } from 'react-redux'
 import {
     eventListSelector,
-    fetchBatchEvents,
+    fetchLazy,
     loadedSelector,
     loadingSelector,
     selectedEventListSelector,
     selectEvent,
-    lastEntityUIDSelector,
 } from '../../ducks/events'
 import { InfiniteLoader, Table, Column } from 'react-virtualized'
 import type { EventRecord } from '../../ducks/events'
 import 'react-virtualized/styles.css'
 
 type Props = {
-    fetchBatchEvents: (quantity: number, startAt?: string) => void,
+    fetchLazy: () => void,
     selectEvent: (uid: string) => void,
     events: [],
     selectedEvents: Array<EventRecord>,
@@ -32,27 +31,28 @@ class EventInfiniteLoader extends React.Component<Props, State> {
     state = {}
 
     componentDidMount() {
-        this.props.fetchBatchEvents(10)
+        this.props.fetchLazy()
     }
 
     render() {
-        const { events } = this.props
+        const { events, loaded } = this.props
 
         return (
             <InfiniteLoader
-                isRowLoaded={this.checkRowLoadState}
-                loadMoreRows={this.handleFetchMoreRows}
-                rowCount={1000}
+                isRowLoaded={this.isRowLoaded}
+                loadMoreRows={this.loadMoreRows}
+                rowCount={loaded ? events.length : events.length + 1}
             >
                 {({ onRowsRendered, registerChild }) => (
                     <Table
+                        ref={registerChild}
+                        onRowsRendered={onRowsRendered}
                         height={300}
                         width={700}
                         rowHeight={40}
-                        ref={registerChild}
-                        onRowsRendered={onRowsRendered}
                         rowCount={events.length}
                         rowGetter={this.rowGetter}
+                        onRowClick={this.handleRowClick}
                     >
                         <Column dataKey={'title'} width={300} label={'title'} />
                         <Column dataKey={'where'} width={200} label={'where'} />
@@ -63,17 +63,18 @@ class EventInfiniteLoader extends React.Component<Props, State> {
         )
     }
 
-    handleFetchMoreRows = ({ startIndex, stopIndex }) => {
-        const quantity = stopIndex - startIndex
-
-        console.log('---', startIndex, stopIndex, quantity)
-
-        this.props.fetchBatchEvents(quantity, this.props.lastUID)
+    loadMoreRows = () => {
+        this.props.fetchLazy()
     }
 
-    checkRowLoadState = ({ index }) => {
-        // console.log('---', this.props.events)
-        return !!this.props.events[index]
+    isRowLoaded = ({ index }) => {
+        // If index is less than quantity of loaded events => loaded
+        return index < this.props.events.length
+    }
+
+    handleRowClick = ({ rowData }) => {
+        const { selectEvent } = this.props
+        selectEvent && selectEvent(rowData.uid)
     }
 
     rowGetter = ({ index }) => this.props.events[index]
@@ -86,8 +87,7 @@ export default connect(
             selectedEvents: selectedEventListSelector(state),
             loading: loadingSelector(state),
             loaded: loadedSelector(state),
-            lastUID: lastEntityUIDSelector(state),
         }
     },
-    { fetchBatchEvents, selectEvent }
+    { fetchLazy, selectEvent }
 )(EventInfiniteLoader)
