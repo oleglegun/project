@@ -1,10 +1,12 @@
 /* @flow */
 import { appName } from '../config'
-import { Record, List } from 'immutable'
+import { Record, OrderedMap } from 'immutable'
 import { put, call, takeEvery } from 'redux-saga/effects'
-import { generateId } from './utils'
+import { fbToEntities, generateId } from './utils'
 import type { RecordOf, RecordFactory } from 'immutable'
 import type { SagaIterator } from 'redux-saga'
+import { reset } from 'redux-form'
+import firebase from 'firebase'
 
 /*------------------------------------------------------------------------------
 /*  Constants
@@ -13,35 +15,42 @@ import type { SagaIterator } from 'redux-saga'
 export const moduleName = 'people'
 const prefix = `${appName}/${moduleName}`
 
-export const ADD_PERSON = `${prefix}/ADD_PERSON`
 export const ADD_PERSON_REQUEST = `${prefix}/ADD_PERSON_REQUEST`
 export const ADD_PERSON_START = `${prefix}/ADD_PERSON_START`
 export const ADD_PERSON_SUCCESS = `${prefix}/ADD_PERSON_SUCCESS`
 export const ADD_PERSON_ERROR = `${prefix}/ADD_PERSON_ERROR`
+
+export const FETCH_ALL_REQUEST = `${prefix}/FETCH_ALL_REQUEST`
+export const FETCH_ALL_START = `${prefix}/FETCH_ALL_START`
+export const FETCH_ALL_SUCCESS = `${prefix}/FETCH_ALL_SUCCESS`
 
 /*------------------------------------------------------------------------------
 /*  Types
 /*----------------------------------------------------------------------------*/
 
 type Person = {
-    id?: number,
     firstName: string,
     lastName: string,
     email: string,
 }
 
 type State = {
-    entities: List<Person>,
+    entities: OrderedMap<string, Person>,
     loading: boolean,
+    loaded: boolean,
     error: mixed,
 }
 
 type Action = {
     type: string,
-    payload: {
-        person?: Person,
-        error?: {},
-    },
+}
+
+type AddPersonRequestAction = Action & {
+    payload: { person: Person },
+}
+
+type AddPersonSuccessAction = Action & {
+    payload: { uid: string } & Person,
 }
 
 /*------------------------------------------------------------------------------
@@ -50,37 +59,39 @@ type Action = {
 
 // Record's default values
 const PersonRecord = Record({
-    id: 0,
+    uid: '',
     firstName: '',
     lastName: '',
     email: '',
 })
 
-const ReducerRecord: RecordFactory<State> = Record({
-    entities: new List(),
+const PersonRecordFactory: RecordFactory<State> = Record({
+    entities: new OrderedMap(),
     loading: false,
+    loaded: false,
     error: {},
 })
 
 export default function reducer(
-    state: RecordOf<State> = ReducerRecord(),
-    action: Action
+    state: RecordOf<State> = PersonRecordFactory(),
+    action: AddPersonSuccessAction & AddPersonRequestAction
 ) {
     const { type, payload } = action
 
     switch (type) {
         case ADD_PERSON_START:
             return state.set('loading', true)
-        case ADD_PERSON_SUCCESS:
-        case ADD_PERSON:
-            // $FlowFixMe: smth. with payload.person type
+        case FETCH_ALL_SUCCESS:
             return state
-                .update('entities', entities =>
-                    entities.push(new PersonRecord({ ...payload.person }))
-                )
+                .set('loading', false)
+                .set('loaded', true)
+                .set('entities', fbToEntities(payload, PersonRecordFactory))
+        case ADD_PERSON_SUCCESS:
+            return state
+                .setIn(['entities', payload.uid], PersonRecord(payload))
                 .set('loading', false)
         case ADD_PERSON_ERROR:
-            return state.set('loading', false).set('error', payload.error)
+            return state.set('loading', false).set('error', payload)
         default:
             return state
     }
@@ -94,24 +105,53 @@ export default function reducer(
 /*  Action Creators
 /*----------------------------------------------------------------------------*/
 
-export const addPerson = (person: Person) => ({
+export const addPerson = (person: Person): AddPersonRequestAction => ({
     type: ADD_PERSON_REQUEST,
     payload: { person },
+})
+
+export const fetchAll = (): Action => ({
+    type: FETCH_ALL_REQUEST,
 })
 
 /*------------------------------------------------------------------------------
 /*  Sagas
 /*----------------------------------------------------------------------------*/
 
-export function* addPersonSaga(action: Action): SagaIterator {
-    const id = yield call(generateId)
-
-    const effect = put({
-        type: ADD_PERSON_SUCCESS,
-        payload: { person: { ...action.payload.person, id } },
+export function* addPersonSaga(action: AddPersonRequestAction): SagaIterator {
+    yield put({
+        type: ADD_PERSON_START,
+        payload: { ...action.payload.person },
     })
 
-    yield effect
+    const peopleRef = firebase.database().ref('/people')
+
+    const { key } = yield call(
+        [peopleRef, peopleRef.push],
+        action.payload.person
+    )
+
+    yield put({
+        type: ADD_PERSON_SUCCESS,
+        payload: { uid: key, ...action.payload.person },
+    })
+
+    yield put(reset('addPerson'))
+}
+
+export function* fetchAllSaga(): SagaIterator {
+    yield put({
+        type: FETCH_ALL_START,
+    })
+
+    const peopleRef = firebase.database().ref('people')
+
+    const snapshot = yield call([peopleRef, peopleRef.once], 'value')
+
+    yield call({
+        type: FETCH_ALL_SUCCESS,
+        payload: snapshot.val(),
+    })
 }
 
 export function* saga(): SagaIterator {
