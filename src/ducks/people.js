@@ -29,7 +29,7 @@ export const FETCH_ALL_SUCCESS = `${prefix}/FETCH_ALL_SUCCESS`
 /*  Types
 /*----------------------------------------------------------------------------*/
 
-type Person = {
+export type Person = {
     firstName: string,
     lastName: string,
     email: string,

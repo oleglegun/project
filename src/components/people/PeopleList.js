@@ -3,10 +3,12 @@ import * as React from 'react'
 import { connect } from 'react-redux'
 import { fetchAll, peopleListSelector } from '../../ducks/people'
 import { List } from 'react-virtualized'
+import PersonRow from './PersonRow'
+import type {Person} from "../../ducks/people"
 
 type Props = {
     fetchAll: () => null,
-    people: Array<null>,
+    people: Array<Person>,
 }
 
 type State = {}
@@ -19,6 +21,7 @@ class PeopleList extends React.Component<Props, State> {
     componentDidMount() {
         this.props.fetchAll()
     }
+
     render() {
         return (
             <List
@@ -32,15 +35,9 @@ class PeopleList extends React.Component<Props, State> {
         )
     }
 
-    rowRenderer = ({ index, key, style }) => {
-        const person = this.props.people[index]
-
-        return (
-            <div key={key} style={style}>
-                {person.email}
-            </div>
-        )
-    }
+    rowRenderer = ({ index, key, style }) => (
+        <PersonRow person={this.props.people[index]} key={key} style={style} />
+    )
 }
 
 export default connect(
