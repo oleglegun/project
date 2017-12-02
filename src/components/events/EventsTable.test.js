@@ -1,13 +1,10 @@
 import React from 'react'
-import Enzyme, { shallow } from 'enzyme'
-import Adapter from 'enzyme-adapter-react-16'
+import { shallow } from 'enzyme'
 import { EventsTable } from './EventsTable'
 import Loader from '../common/Loader'
 import events from '../../mocks/conferences'
 
 const eventList = events.map((event, id) => ({ uid: id, ...event }))
-
-Enzyme.configure({ adapter: new Adapter() })
 
 it('should render loader', () => {
     const container = shallow(

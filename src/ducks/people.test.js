@@ -12,19 +12,19 @@ it('should add person', () => {
     const requestAction = addPerson(person)
 
     const gen = addPersonSaga(requestAction)
-
-    // shallow comparison for 2 saga objects
-    // checking that the right function is called
-    expect(gen.next().value).toEqual(call(generateId))
-
-    const id = generateId()
-
-    expect(gen.next(id).value).toEqual(
-        put({
-            type: ADD_PERSON_SUCCESS,
-            payload: {
-                person: { ...person, id },
-            },
-        })
-    )
+    //
+    // // shallow comparison for 2 saga objects
+    // // checking that the right function is called
+    // expect(gen.next().value).toEqual(call(generateId))
+    //
+    // const id = generateId()
+    //
+    // expect(gen.next(id).value).toEqual(
+    //     put({
+    //         type: ADD_PERSON_SUCCESS,
+    //         payload: {
+    //             person: { ...person, id },
+    //         },
+    //     })
+    // )
 })
