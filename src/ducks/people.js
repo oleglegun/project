@@ -1,12 +1,13 @@
 /* @flow */
 import { appName } from '../config'
 import { Record, OrderedMap } from 'immutable'
-import { put, call, takeEvery } from 'redux-saga/effects'
-import { fbToEntities, generateId } from './utils'
+import { put, call, takeEvery, all } from 'redux-saga/effects'
+import { fbToEntities } from './utils'
 import type { RecordOf, RecordFactory } from 'immutable'
 import type { SagaIterator } from 'redux-saga'
 import { reset } from 'redux-form'
 import firebase from 'firebase'
+import { createSelector } from 'reselect'
 
 /*------------------------------------------------------------------------------
 /*  Constants
@@ -58,14 +59,14 @@ type AddPersonSuccessAction = Action & {
 /*----------------------------------------------------------------------------*/
 
 // Record's default values
-const PersonRecord = Record({
+const PersonRecordFactory: RecordFactory<Person> = Record({
     uid: '',
     firstName: '',
     lastName: '',
     email: '',
 })
 
-const PersonRecordFactory: RecordFactory<State> = Record({
+const ReducerRecordFactory: RecordFactory<State> = Record({
     entities: new OrderedMap(),
     loading: false,
     loaded: false,
@@ -73,7 +74,7 @@ const PersonRecordFactory: RecordFactory<State> = Record({
 })
 
 export default function reducer(
-    state: RecordOf<State> = PersonRecordFactory(),
+    state: RecordOf<State> = ReducerRecordFactory(),
     action: AddPersonSuccessAction & AddPersonRequestAction
 ) {
     const { type, payload } = action
@@ -88,7 +89,7 @@ export default function reducer(
                 .set('entities', fbToEntities(payload, PersonRecordFactory))
         case ADD_PERSON_SUCCESS:
             return state
-                .setIn(['entities', payload.uid], PersonRecord(payload))
+                .setIn(['entities', payload.uid], PersonRecordFactory(payload))
                 .set('loading', false)
         case ADD_PERSON_ERROR:
             return state.set('loading', false).set('error', payload)
@@ -100,6 +101,11 @@ export default function reducer(
 /*------------------------------------------------------------------------------
 /*  Selectors
 /*----------------------------------------------------------------------------*/
+
+export const stateSelector = (state: { people: State }) => state[moduleName]
+export const peopleListSelector = createSelector(stateSelector, state =>
+    state.entities.valueSeq().toArray()
+)
 
 /*------------------------------------------------------------------------------
 /*  Action Creators
@@ -140,20 +146,27 @@ export function* addPersonSaga(action: AddPersonRequestAction): SagaIterator {
 }
 
 export function* fetchAllSaga(): SagaIterator {
-    yield put({
-        type: FETCH_ALL_START,
-    })
+    try {
+        yield put({
+            type: FETCH_ALL_START,
+        })
 
-    const peopleRef = firebase.database().ref('people')
+        const peopleRef = firebase.database().ref('/people')
 
-    const snapshot = yield call([peopleRef, peopleRef.once], 'value')
+        const snapshot = yield call([peopleRef, peopleRef.once], 'value')
 
-    yield call({
-        type: FETCH_ALL_SUCCESS,
-        payload: snapshot.val(),
-    })
+        yield put({
+            type: FETCH_ALL_SUCCESS,
+            payload: snapshot.val(),
+        })
+    } catch (e) {
+        console.log('---', e)
+    }
 }
 
 export function* saga(): SagaIterator {
-    yield takeEvery(ADD_PERSON_REQUEST, addPersonSaga)
+    yield all([
+        takeEvery(ADD_PERSON_REQUEST, addPersonSaga),
+        takeEvery(FETCH_ALL_REQUEST, fetchAllSaga),
+    ])
 }

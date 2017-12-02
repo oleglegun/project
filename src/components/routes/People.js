@@ -3,6 +3,7 @@ import React from 'react'
 import { connect } from 'react-redux'
 import NewPersonForm from '../people/NewPersonForm'
 import { addPerson } from '../../ducks/people'
+import PeopleList from '../people/PeopleList'
 
 type Props = {
     addPerson: (person: {
@@ -14,7 +15,12 @@ type Props = {
 
 class PeoplePage extends React.Component<Props> {
     render() {
-        return <NewPersonForm onSubmit={this.handleAddPerson} />
+        return (
+            <div>
+                <NewPersonForm onSubmit={this.handleAddPerson} />
+                <PeopleList />
+            </div>
+        )
     }
 
     handleAddPerson = values => {

@@ -49,12 +49,6 @@ type ActionRequest = {
     },
 }
 
-// type ThunkAction = (
-//     dispatch: (action: Action | ThunkAction | Promise<Action>) => void,
-//     getState: () => State
-// ) => mixed
-// type Dispatch = (action: Action | ThunkAction | Promise<Action>) => void
-
 /*------------------------------------------------------------------------------
 /*  Reducer
 /*----------------------------------------------------------------------------*/
