@@ -15,7 +15,7 @@ import type { EventRecord } from '../../ducks/events'
 type Props = {
     fetchAllEvents: () => void,
     selectEvent: (uid: string) => void,
-    events: [],
+    events: Array<EventRecord>,
     selectedEvents: Array<EventRecord>,
     loading: boolean,
     loaded: boolean,
@@ -68,13 +68,11 @@ export class EventsTable extends React.Component<Props, State> {
 }
 
 export default connect(
-    state => {
-        return {
-            events: eventListSelector(state),
-            selectedEvents: selectedEventListSelector(state),
-            loading: loadingSelector(state),
-            loaded: loadedSelector(state),
-        }
-    },
+    state => ({
+        events: eventListSelector(state),
+        selectedEvents: selectedEventListSelector(state),
+        loading: loadingSelector(state),
+        loaded: loadedSelector(state),
+    }),
     { fetchAllEvents, selectEvent }
 )(EventsTable)

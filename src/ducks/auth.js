@@ -62,7 +62,7 @@ export const ReducerRecordFactory: RecordFactory<State> = Record({
 export default function reducer(
     state: RecordOf<State> = ReducerRecordFactory(),
     action: Action
-) {
+): State {
     const { type, payload } = action
 
     switch (type) {
@@ -181,7 +181,7 @@ export function* watchStatusChangeSaga(): SagaIterator {
     while (true) {
         yield take(SIGN_IN_SUCCESS)
 
-        yield put(replace('/people'))
+        yield put(replace('/admin'))
     }
 }
 //
