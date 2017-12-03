@@ -4,7 +4,7 @@ import { connect } from 'react-redux'
 import { fetchAll, peopleListSelector } from '../../ducks/people'
 import { List } from 'react-virtualized'
 import PersonRow from './PersonRow'
-import type {Person} from "../../ducks/people"
+import type { Person } from '../../ducks/people'
 
 type Props = {
     fetchAll: () => null,
@@ -34,8 +34,8 @@ class PeopleList extends React.Component<Props, State> {
             />
         )
     }
-
     rowRenderer = ({ index, key, style }) => (
+        // $FlowFixMe
         <PersonRow person={this.props.people[index]} key={key} style={style} />
     )
 }

@@ -1,7 +1,7 @@
 /* @flow */
 import * as React from 'react'
 import { selectedEventListSelector } from '../../ducks/events'
-import { connect, type MapStateToProps } from 'react-redux'
+import { connect } from 'react-redux'
 import SelectedEventCard from './SelectedEventCard'
 import type { EventRecord } from '../../ducks/events'
 

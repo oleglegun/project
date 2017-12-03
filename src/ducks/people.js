@@ -1,7 +1,7 @@
 /* @flow */
 import { appName } from '../config'
 import { Record, OrderedMap } from 'immutable'
-import { put, call, takeEvery, all } from 'redux-saga/effects'
+import { put, call, takeEvery, all, select } from 'redux-saga/effects'
 import { fbToEntities } from './utils'
 import type { RecordOf, RecordFactory } from 'immutable'
 import type { SagaIterator } from 'redux-saga'
@@ -9,9 +9,9 @@ import { reset } from 'redux-form'
 import firebase from 'firebase'
 import { createSelector } from 'reselect'
 
-/*------------------------------------------------------------------------------
-/*  Constants
-/*----------------------------------------------------------------------------*/
+/**------------------------------------------------------------------------------
+ *  Constants
+ *----------------------------------------------------------------------------*/
 
 export const moduleName = 'people'
 const prefix = `${appName}/${moduleName}`
@@ -25,14 +25,20 @@ export const FETCH_ALL_REQUEST = `${prefix}/FETCH_ALL_REQUEST`
 export const FETCH_ALL_START = `${prefix}/FETCH_ALL_START`
 export const FETCH_ALL_SUCCESS = `${prefix}/FETCH_ALL_SUCCESS`
 
-/*------------------------------------------------------------------------------
-/*  Types
-/*----------------------------------------------------------------------------*/
+export const ADD_EVENT_REQUEST = `${prefix}/ADD_EVENT_REQUEST`
+export const ADD_EVENT_START = `${prefix}/ADD_EVENT_START`
+export const ADD_EVENT_SUCCESS = `${prefix}/ADD_EVENT_SUCCESS`
+
+/**------------------------------------------------------------------------------
+ *  Types
+ *----------------------------------------------------------------------------*/
 
 export type Person = {
+    uid: string,
     firstName: string,
     lastName: string,
     email: string,
+    events: string[],
 }
 
 type State = {
@@ -50,13 +56,18 @@ type AddPersonRequestAction = Action & {
     payload: { person: Person },
 }
 
-type AddPersonSuccessAction = Action & {
-    payload: { uid: string } & Person,
+export type AddEventToPersonAction = Action & {
+    payload: { eventId: string, personId: string },
 }
 
-/*------------------------------------------------------------------------------
-/*  Reducer
-/*----------------------------------------------------------------------------*/
+type ReducerAction<P> = {
+    type: string,
+    payload: P,
+}
+
+/**------------------------------------------------------------------------------
+ *  Reducer
+ *----------------------------------------------------------------------------*/
 
 // Record's default values
 const PersonRecordFactory: RecordFactory<Person> = Record({
@@ -64,6 +75,7 @@ const PersonRecordFactory: RecordFactory<Person> = Record({
     firstName: '',
     lastName: '',
     email: '',
+    events: [],
 })
 
 const ReducerRecordFactory: RecordFactory<State> = Record({
@@ -75,7 +87,7 @@ const ReducerRecordFactory: RecordFactory<State> = Record({
 
 export default function reducer(
     state: RecordOf<State> = ReducerRecordFactory(),
-    action: AddPersonSuccessAction & AddPersonRequestAction
+    action: ReducerAction<*>
 ) {
     const { type, payload } = action
 
@@ -93,23 +105,41 @@ export default function reducer(
                 .set('loading', false)
         case ADD_PERSON_ERROR:
             return state.set('loading', false).set('error', payload)
+        case ADD_EVENT_SUCCESS:
+            return state.setIn(
+                ['entities', payload.personId, 'events'],
+                payload.updatedEvents
+            )
         default:
             return state
     }
 }
 
-/*------------------------------------------------------------------------------
-/*  Selectors
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Selectors
+ *----------------------------------------------------------------------------*/
 
 export const stateSelector = (state: { people: State }) => state[moduleName]
-export const peopleListSelector = createSelector(stateSelector, state =>
-    state.entities.valueSeq().toArray()
+
+export const entitiesSelector = createSelector(
+    stateSelector,
+    (state: State) => state.entities
 )
 
-/*------------------------------------------------------------------------------
-/*  Action Creators
-/*----------------------------------------------------------------------------*/
+export const peopleListSelector = createSelector(entitiesSelector, entities =>
+    entities.valueSeq().toArray()
+)
+
+export const idSelector = (state: {}, props: { id: number }) => props.id
+
+export const personSelector = createSelector(
+    [entitiesSelector, idSelector],
+    (entities, id) => entities.get(id).toJS()
+)
+
+/**-----------------------------------------------------------------------------
+ *  Action Creators
+ *----------------------------------------------------------------------------*/
 
 export const addPerson = (person: Person): AddPersonRequestAction => ({
     type: ADD_PERSON_REQUEST,
@@ -120,9 +150,19 @@ export const fetchAll = (): Action => ({
     type: FETCH_ALL_REQUEST,
 })
 
-/*------------------------------------------------------------------------------
-/*  Sagas
-/*----------------------------------------------------------------------------*/
+export function addEventToPerson(
+    eventId: string,
+    personId: string
+): AddEventToPersonAction {
+    return {
+        type: ADD_EVENT_REQUEST,
+        payload: { eventId, personId },
+    }
+}
+
+/**-----------------------------------------------------------------------------
+ *  Sagas
+ *----------------------------------------------------------------------------*/
 
 export function* addPersonSaga(action: AddPersonRequestAction): SagaIterator {
     yield put({
@@ -164,9 +204,35 @@ export function* fetchAllSaga(): SagaIterator {
     }
 }
 
+export function* addEventToPersonSaga({
+    payload: { eventId, personId },
+}: AddEventToPersonAction): SagaIterator {
+    const eventsRef = firebase.database().ref(`people/${personId}/events`)
+
+    yield put({
+        type: ADD_EVENT_START,
+    })
+
+    const state = yield select(stateSelector)
+
+    const events = state.getIn(['entities', personId, 'events'])
+
+    const updatedEvents = events.includes(eventId)
+        ? events
+        : events.concat(eventId)
+
+    yield call([eventsRef, eventsRef.set], updatedEvents)
+
+    yield put({
+        type: ADD_EVENT_SUCCESS,
+        payload: { personId, updatedEvents },
+    })
+}
+
 export function* saga(): SagaIterator {
     yield all([
         takeEvery(ADD_PERSON_REQUEST, addPersonSaga),
         takeEvery(FETCH_ALL_REQUEST, fetchAllSaga),
+        takeEvery(ADD_EVENT_REQUEST, addEventToPersonSaga),
     ])
 }

@@ -5,6 +5,7 @@ import AdminPage from './routes/Admin'
 import AuthPage from './routes/Auth'
 import PeoplePage from './routes/People'
 import EventsPage from './routes/Events'
+import CustomDragLayer from './CustomDragLayer'
 
 class App extends Component {
     render() {
@@ -37,6 +38,7 @@ class App extends Component {
                 <ProtectedRoute path="/people" component={PeoplePage} />
                 <ProtectedRoute path="/events" component={EventsPage} />
                 <Route path="/auth" component={AuthPage} />
+                <CustomDragLayer />
             </div>
         )
     }
