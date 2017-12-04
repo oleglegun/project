@@ -30,6 +30,11 @@ export const FETCH_LAZY_SUCCESS = `${prefix}/FETCH_LAZY_SUCCESS`
 
 export const SELECT_EVENT = `${prefix}/SELECT_EVENT`
 
+export const DELETE_EVENT_REQUEST = `${prefix}/DELETE_EVENT_REQUEST`
+export const DELETE_EVENT_START = `${prefix}/DELETE_EVENT_START`
+export const DELETE_EVENT_SUCCESS = `${prefix}/DELETE_EVENT_SUCCESS`
+export const DELETE_EVENT_ERROR = `${prefix}/DELETE_EVENT_ERROR`
+
 /*------------------------------------------------------------------------------
 /*  Types
 /*----------------------------------------------------------------------------*/
@@ -125,6 +130,11 @@ export default function reducer(
             return state.update('selected', selected =>
                 selected.add(payload.uid)
             )
+        case DELETE_EVENT_SUCCESS:
+            return state
+                .update('entities', entities => entities.delete(payload.uid))
+                .update('selected', selected => selected.delete(payload.uid))
+
         default:
             return state
     }
@@ -171,6 +181,13 @@ export const lastEntityUIDSelector = createSelector(
     entities => entities.last() && entities.last().uid
 )
 
+export const idSelector = (state: {}, props: { uid: string }) => props.uid
+
+export const eventSelector = createSelector(
+    [entitiesSelector, idSelector],
+    (entities, id) => entities.get(id).toJS()
+)
+
 /*------------------------------------------------------------------------------
 /*  Action Creators
 /*----------------------------------------------------------------------------*/
@@ -201,6 +218,13 @@ export function fetchLazy() {
 export function selectEvent(uid: string) {
     return {
         type: SELECT_EVENT,
+        payload: { uid },
+    }
+}
+
+export function deleteEvent(uid: string) {
+    return {
+        type: DELETE_EVENT_REQUEST,
         payload: { uid },
     }
 }
@@ -261,7 +285,7 @@ export function* fetchBatchSaga(action: FetchBatchRequestAction): SagaIterator {
     })
 }
 
-export const fetchLazySaga = function*(): SagaIterator {
+export function* fetchLazySaga(): SagaIterator {
     while (true) {
         yield take(FETCH_LAZY_REQUEST)
 
@@ -293,11 +317,34 @@ export const fetchLazySaga = function*(): SagaIterator {
     }
 }
 
+export function* deleteEventSaga({ payload: { uid } }: Action): SagaIterator {
+    yield put({
+        type: DELETE_EVENT_START,
+    })
+
+    try {
+        const ref = firebase.database().ref(`/events/${uid}`)
+
+        yield call([ref, ref.remove])
+
+        yield put({
+            type: DELETE_EVENT_SUCCESS,
+            payload: { uid },
+        })
+    } catch (e) {
+        yield put({
+            type: DELETE_EVENT_ERROR,
+            payload: { error: e },
+        })
+    }
+}
+
 export function* saga(): SagaIterator {
     yield all([
         takeEvery(FETCH_ALL_REQUEST, fetchAllSaga),
         takeEvery(FETCH_BATCH_REQUEST, fetchBatchSaga),
         fetchLazySaga(),
+        takeEvery(DELETE_EVENT_REQUEST, deleteEventSaga),
     ])
 }
 

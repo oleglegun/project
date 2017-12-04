@@ -9,6 +9,7 @@ import {
     selectedEventListSelector,
     selectEvent,
 } from '../../ducks/events'
+import EventRow from './EventRow'
 import { InfiniteLoader, Table, Column } from 'react-virtualized'
 import type { EventRecord } from '../../ducks/events'
 import 'react-virtualized/styles.css'
@@ -52,7 +53,7 @@ class EventInfiniteLoader extends React.Component<Props, State> {
                         rowHeight={40}
                         rowCount={events.length}
                         rowGetter={this.rowGetter}
-                        onRowClick={this.handleRowClick}
+                        rowRenderer={this.rowRenderer}
                     >
                         <Column dataKey={'title'} width={300} label={'title'} />
                         <Column dataKey={'where'} width={200} label={'where'} />
@@ -72,12 +73,28 @@ class EventInfiniteLoader extends React.Component<Props, State> {
         return index < this.props.events.length
     }
 
-    handleRowClick = ({ rowData }) => {
+    handleRowClick = rowData => {
         const { selectEvent } = this.props
         selectEvent && selectEvent(rowData.uid)
     }
 
     rowGetter = ({ index }) => this.props.events[index]
+
+    rowRenderer = props => {
+        const { index, key, columns, style, className, rowData } = props
+        return (
+            // $FlowFixMe
+            <EventRow
+                onRowClick={() => this.handleRowClick(rowData)}
+                rowData={rowData}
+                columns={columns}
+                event={this.props.events[index]}
+                key={key}
+                style={style}
+                className={className}
+            />
+        )
+    }
 }
 
 export default connect(

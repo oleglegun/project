@@ -1,6 +1,7 @@
 /* @flow */
 import * as React from 'react'
 import EventsTable from '../events/EventInfiniteLoader'
+import TrashBin from '../events/TrashBin'
 
 type Props = {}
 
@@ -15,6 +16,7 @@ class EventsPage extends React.Component<Props, State> {
         return (
             <div>
                 <EventsTable />
+                <TrashBin />
             </div>
         )
     }

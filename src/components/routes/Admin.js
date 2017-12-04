@@ -3,6 +3,7 @@ import ProtectedRoute from '../common/ProtectedRoute'
 import PeopleList from '../people/PeopleList'
 import EventList from '../events/EventInfiniteLoader'
 import SelectedEvents from '../events/SelectedEvents'
+import TrashBin from '../events/TrashBin'
 
 class Admin extends React.Component {
     render() {
@@ -15,6 +16,7 @@ class Admin extends React.Component {
                 <SelectedEvents />
 
                 <ProtectedRoute />
+                <TrashBin />
             </div>
         )
     }
