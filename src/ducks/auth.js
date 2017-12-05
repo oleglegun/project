@@ -8,9 +8,9 @@ import { replace } from 'react-router-redux'
 // $FlowFixMe clearFields: no such named export
 import { clearFields, type SagaIterator } from 'redux-form'
 
-/*------------------------------------------------------------------------------
-/*  Constants
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Constants
+ *----------------------------------------------------------------------------*/
 
 export const moduleName = 'auth'
 const prefix = `${appName}/${moduleName}`
@@ -23,9 +23,9 @@ export const SIGN_IN_REQUEST = `${prefix}/SIGN_IN_REQUEST`
 export const SIGN_IN_SUCCESS = `${prefix}/SIGN_IN_SUCCESS`
 export const SIGN_IN_ERROR = `${prefix}/SIGN_IN_ERROR`
 
-/*------------------------------------------------------------------------------
-/*  Types
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Types
+ *----------------------------------------------------------------------------*/
 
 type State = {
     user: mixed,
@@ -49,9 +49,9 @@ type ActionRequest = {
     },
 }
 
-/*------------------------------------------------------------------------------
-/*  Reducer
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Reducer
+ *----------------------------------------------------------------------------*/
 
 export const ReducerRecordFactory: RecordFactory<State> = Record({
     user: null,
@@ -80,17 +80,17 @@ export default function reducer(
     }
 }
 
-/*------------------------------------------------------------------------------
-/*  Selectors
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Selectors
+ *----------------------------------------------------------------------------*/
 
 // state is global here
 export const stateSelector = (state: { auth: State }) => state[moduleName]
 export const userSelector = createSelector(stateSelector, state => state.user)
 
-/*------------------------------------------------------------------------------
-/*  Action Creators
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Action Creators
+ *----------------------------------------------------------------------------*/
 
 export const signUp = (email: string, password: string): ActionRequest => {
     return {
@@ -106,9 +106,9 @@ export const signIn = (email: string, password: string): ActionRequest => {
     }
 }
 
-/*------------------------------------------------------------------------------
-/*  Sagas
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Sagas
+ *----------------------------------------------------------------------------*/
 
 export function* signUpSaga(): SagaIterator {
     // we lose context firebase.auth() when calling its method
@@ -181,7 +181,7 @@ export function* watchStatusChangeSaga(): SagaIterator {
     while (true) {
         yield take(SIGN_IN_SUCCESS)
 
-        yield put(replace('/admin'))
+        yield put(replace('/people'))
     }
 }
 //

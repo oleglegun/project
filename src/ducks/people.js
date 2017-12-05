@@ -1,13 +1,25 @@
 /* @flow */
 import { appName } from '../config'
 import { Record, OrderedMap } from 'immutable'
-import { put, call, takeEvery, all, select } from 'redux-saga/effects'
+import {
+    put,
+    call,
+    takeEvery,
+    take,
+    all,
+    select,
+    fork,
+    spawn,
+    cancel,
+    cancelled,
+} from 'redux-saga/effects'
 import { fbToEntities } from './utils'
 import type { RecordOf, RecordFactory } from 'immutable'
 import type { SagaIterator } from 'redux-saga'
 import { reset } from 'redux-form'
 import firebase from 'firebase'
 import { createSelector } from 'reselect'
+import { delay, eventChannel } from 'redux-saga'
 
 /**------------------------------------------------------------------------------
  *  Constants
@@ -29,7 +41,7 @@ export const ADD_EVENT_REQUEST = `${prefix}/ADD_EVENT_REQUEST`
 export const ADD_EVENT_START = `${prefix}/ADD_EVENT_START`
 export const ADD_EVENT_SUCCESS = `${prefix}/ADD_EVENT_SUCCESS`
 
-/**------------------------------------------------------------------------------
+/**-----------------------------------------------------------------------------
  *  Types
  *----------------------------------------------------------------------------*/
 
@@ -65,7 +77,7 @@ type ReducerAction<P> = {
     payload: P,
 }
 
-/**------------------------------------------------------------------------------
+/**-----------------------------------------------------------------------------
  *  Reducer
  *----------------------------------------------------------------------------*/
 
@@ -229,10 +241,59 @@ export function* addEventToPersonSaga({
     })
 }
 
+export const syncPeopleWithShortPollingSaga = function*(): SagaIterator {
+    try {
+        while (true) {
+            yield call(fetchAllSaga)
+            yield delay(2000)
+        }
+    } finally {
+        // check if the task was cancelled (without exception)
+        if (yield cancelled()) {
+            console.log('---', 'syncPeopleWithShortPollingSaga was cancelled.')
+        }
+    }
+}
+
+export const cancelableSyncSaga = function*(): SagaIterator {
+    const task = yield fork(syncPeopleWithShortPollingSaga)
+    yield delay(5000)
+    yield cancel(task)
+}
+
+// Function returns eventChannel, that will be called in other sagas
+const createPeopleSocket = () =>
+    eventChannel(emitter => {
+        const ref = firebase.database().ref('/people')
+
+        const callback = data => emitter({ data })
+        // put data in object {data}, otherwise exception can happen on undefined data
+        // emit is always called with some value, data key can be undefined
+        ref.on('value', callback)
+
+        // return function to unsubscribe
+        return () => ref.off('value', callback)
+    })
+
+export const realtimePeopleSyncSaga = function*(): SagaIterator {
+    const chan = yield call(createPeopleSocket)
+    while (true) {
+        const { data } = yield take(chan)
+
+        yield put({
+            type: FETCH_ALL_SUCCESS,
+            payload: data.val(),
+        })
+    }
+}
+
 export function* saga(): SagaIterator {
+    // yield fork(syncPeopleWithShortPollingSaga)
+    // yield spawn(cancelableSyncSaga)
+    yield spawn(realtimePeopleSyncSaga)
+
     yield all([
         takeEvery(ADD_PERSON_REQUEST, addPersonSaga),
-        takeEvery(FETCH_ALL_REQUEST, fetchAllSaga),
         takeEvery(ADD_EVENT_REQUEST, addEventToPersonSaga),
     ])
 }

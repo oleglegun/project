@@ -9,9 +9,9 @@ import type { RecordOf, RecordFactory } from 'immutable'
 import type { SagaIterator } from 'redux-saga'
 import { createSelector } from 'reselect'
 
-/*------------------------------------------------------------------------------
-/*  Constants
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Constants
+ *----------------------------------------------------------------------------*/
 
 export const moduleName = 'events'
 const prefix = `${appName}/${moduleName}`
@@ -35,9 +35,9 @@ export const DELETE_EVENT_START = `${prefix}/DELETE_EVENT_START`
 export const DELETE_EVENT_SUCCESS = `${prefix}/DELETE_EVENT_SUCCESS`
 export const DELETE_EVENT_ERROR = `${prefix}/DELETE_EVENT_ERROR`
 
-/*------------------------------------------------------------------------------
-/*  Types
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Types
+ *----------------------------------------------------------------------------*/
 
 export type Event = {
     title: string,
@@ -71,9 +71,9 @@ type FetchBatchRequestAction = {
     },
 }
 
-/*------------------------------------------------------------------------------
-/*  Reducer
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Reducer
+ *----------------------------------------------------------------------------*/
 
 export const ReducerRecordFactory: RecordFactory<State> = Record({
     loading: false,
@@ -140,9 +140,9 @@ export default function reducer(
     }
 }
 
-/*------------------------------------------------------------------------------
-/*  Selectors
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Selectors
+ *----------------------------------------------------------------------------*/
 
 export const stateSelector = (state: { events: State }): State =>
     state[moduleName]
@@ -188,9 +188,9 @@ export const eventSelector = createSelector(
     (entities, id) => entities.get(id).toJS()
 )
 
-/*------------------------------------------------------------------------------
-/*  Action Creators
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Action Creators
+ *----------------------------------------------------------------------------*/
 
 export function fetchAllEvents() {
     return {
@@ -229,9 +229,9 @@ export function deleteEvent(uid: string) {
     }
 }
 
-/*------------------------------------------------------------------------------
-/*  Sagas
-/*----------------------------------------------------------------------------*/
+/**-----------------------------------------------------------------------------
+ *  Sagas
+ *----------------------------------------------------------------------------*/
 
 export function* fetchAllSaga(): SagaIterator {
     const ref = firebase
@@ -341,9 +341,9 @@ export function* deleteEventSaga({ payload: { uid } }: Action): SagaIterator {
 
 export function* saga(): SagaIterator {
     yield all([
+        fetchLazySaga(),
         takeEvery(FETCH_ALL_REQUEST, fetchAllSaga),
         takeEvery(FETCH_BATCH_REQUEST, fetchBatchSaga),
-        fetchLazySaga(),
         takeEvery(DELETE_EVENT_REQUEST, deleteEventSaga),
     ])
 }
