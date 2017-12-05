@@ -17,10 +17,8 @@ type Props = {
     isDragging: boolean,
 }
 
-type State = {}
 
-class EventRow extends React.Component<Props, State> {
-    state = {}
+class EventRow extends React.Component<Props> {
 
     componentDidMount() {
         this.props.connectDragPreview(getEmptyImage())

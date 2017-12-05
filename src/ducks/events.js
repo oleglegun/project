@@ -132,7 +132,7 @@ export default function reducer(
             )
         case DELETE_EVENT_SUCCESS:
             return state
-                .update('entities', entities => entities.delete(payload.uid))
+                .deleteIn(['entities', payload.uid])
                 .update('selected', selected => selected.delete(payload.uid))
 
         default:
