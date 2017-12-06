@@ -19,7 +19,7 @@ import type { SagaIterator } from 'redux-saga'
 import { reset } from 'redux-form'
 import firebase from 'firebase'
 import { createSelector } from 'reselect'
-import { delay, eventChannel } from 'redux-saga'
+import { delay, eventChannel, END } from 'redux-saga'
 
 /**------------------------------------------------------------------------------
  *  Constants
@@ -40,6 +40,11 @@ export const FETCH_ALL_SUCCESS = `${prefix}/FETCH_ALL_SUCCESS`
 export const ADD_EVENT_REQUEST = `${prefix}/ADD_EVENT_REQUEST`
 export const ADD_EVENT_START = `${prefix}/ADD_EVENT_START`
 export const ADD_EVENT_SUCCESS = `${prefix}/ADD_EVENT_SUCCESS`
+
+export const SYNC_START = `${prefix}/SYNC_START`
+export const SYNC_END = `${prefix}/SYNC_END`
+
+export const LOCATION_CHANGE = `@@router/LOCATION_CHANGE`
 
 /**-----------------------------------------------------------------------------
  *  Types
@@ -112,9 +117,8 @@ export default function reducer(
                 .set('loaded', true)
                 .set('entities', fbToEntities(payload, PersonRecordFactory))
         case ADD_PERSON_SUCCESS:
-            return state
-                .setIn(['entities', payload.uid], PersonRecordFactory(payload))
-                .set('loading', false)
+            return state.set('loading', false)
+        //         .setIn(['entities', payload.uid], PersonRecordFactory(payload))
         case ADD_PERSON_ERROR:
             return state.set('loading', false).set('error', payload)
         case ADD_EVENT_SUCCESS:
@@ -262,38 +266,106 @@ export const cancelableSyncSaga = function*(): SagaIterator {
 }
 
 // Function returns eventChannel, that will be called in other sagas
-const createPeopleSocket = () =>
-    eventChannel(emitter => {
+// const createPeopleSocket = () =>
+//     eventChannel(emitter => {
+//         const ref = firebase.database().ref('/people')
+//
+//         const callback = data => emitter({ data })
+//         // put data in object {data}, otherwise exception can happen on undefined data
+//         // emit is always called with some value, data key can be undefined
+//         ref.on('value', callback)
+//
+//         // return function to unsubscribe
+//         return () => ref.off('value', callback)
+//     })
+
+// export const realtimePeopleSyncSaga = function*(): SagaIterator {
+//     const chan = yield call(createPeopleSocket)
+//     while (true) {
+//         const { data } = yield take(chan)
+//
+//         yield put({
+//             type: FETCH_ALL_SUCCESS,
+//             payload: data.val(),
+//         })
+//     }
+// }
+
+// createPeopleSocket returns eventChannel for listening to firebase /people changes
+
+function createPeopleSocket() {
+    return eventChannel(emit => {
+        const callback = data => {
+            emit({ people: data.val() })
+        }
+
         const ref = firebase.database().ref('/people')
 
-        const callback = data => emitter({ data })
-        // put data in object {data}, otherwise exception can happen on undefined data
-        // emit is always called with some value, data key can be undefined
         ref.on('value', callback)
 
-        // return function to unsubscribe
-        return () => ref.off('value', callback)
+        return () => {
+            console.log('---', 'Subscription cancelled!')
+            ref.off('value', callback)
+        }
+    })
+}
+
+function* syncPeopleChangesSaga() {
+    const peopleChan = yield call(createPeopleSocket)
+
+    try {
+        yield put({ type: SYNC_START })
+
+        while (true) {
+            const { people } = yield take(peopleChan)
+            yield put({ type: FETCH_ALL_SUCCESS, payload: people })
+        }
+    } finally {
+        if (yield cancelled()) {
+            peopleChan.close()
+        }
+    }
+}
+
+export const watchRouteChangeSaga = function*(): SagaIterator {
+    yield put({
+        type: 'WATCH_START',
     })
 
-export const realtimePeopleSyncSaga = function*(): SagaIterator {
-    const chan = yield call(createPeopleSocket)
-    while (true) {
-        const { data } = yield take(chan)
+    let onPeoplePage
+    let syncTask
 
-        yield put({
-            type: FETCH_ALL_SUCCESS,
-            payload: data.val(),
-        })
+    while (true) {
+        const { payload } = yield take(LOCATION_CHANGE)
+
+        if (payload.pathname.includes('/people')) {
+            if (!onPeoplePage) {
+                onPeoplePage = true
+
+                // On people page for the 1st time => subscribe
+                syncTask = yield spawn(syncPeopleChangesSaga)
+            }
+        } else if (onPeoplePage) {
+            // Was on people page => unsubscribe
+            onPeoplePage = false
+
+            if (syncTask) {
+                yield cancel(syncTask)
+                yield put({ type: SYNC_END })
+            }
+        }
     }
 }
 
 export function* saga(): SagaIterator {
     // yield fork(syncPeopleWithShortPollingSaga)
     // yield spawn(cancelableSyncSaga)
-    yield spawn(realtimePeopleSyncSaga)
+    // yield spawn(realtimePeopleSyncSaga)
+    yield spawn(watchRouteChangeSaga)
 
     yield all([
         takeEvery(ADD_PERSON_REQUEST, addPersonSaga),
         takeEvery(ADD_EVENT_REQUEST, addEventToPersonSaga),
+        takeEvery(FETCH_ALL_REQUEST, fetchAllSaga),
     ])
 }

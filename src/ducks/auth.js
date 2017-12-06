@@ -3,7 +3,8 @@ import { appName } from '../config'
 import { Record, type RecordOf, type RecordFactory } from 'immutable'
 import firebase from 'firebase'
 import { createSelector } from 'reselect'
-import { call, put, all, take } from 'redux-saga/effects'
+import { call, put, all, take, spawn } from 'redux-saga/effects'
+import { eventChannel } from 'redux-saga'
 import { replace } from 'react-router-redux'
 // $FlowFixMe clearFields: no such named export
 import { clearFields, type SagaIterator } from 'redux-form'
@@ -22,6 +23,8 @@ export const SIGN_UP_ERROR = `${prefix}/SIGN_UP_ERROR`
 export const SIGN_IN_REQUEST = `${prefix}/SIGN_IN_REQUEST`
 export const SIGN_IN_SUCCESS = `${prefix}/SIGN_IN_SUCCESS`
 export const SIGN_IN_ERROR = `${prefix}/SIGN_IN_ERROR`
+
+export const SIGN_OUT_SUCCESS = `${prefix}/SIGN_OUT_SUCCESS`
 
 /**-----------------------------------------------------------------------------
  *  Types
@@ -177,29 +180,33 @@ export function* signInSaga(): SagaIterator {
     }
 }
 
-export function* watchStatusChangeSaga(): SagaIterator {
-    while (true) {
-        yield take(SIGN_IN_SUCCESS)
+export function createStatusChangeSocket() {
+    return eventChannel(emit => {
+        const callback = user => emit({ user })
 
-        yield put(replace('/admin'))
+        const unsubscribe = firebase.auth().onAuthStateChanged(callback)
+
+        return unsubscribe
+    })
+}
+
+export function* syncStatusChangeSaga(): SagaIterator {
+    const authChan = yield call(createStatusChangeSocket)
+
+    while (true) {
+        const { user } = yield take(authChan)
+
+        if (user) {
+            yield put({ type: SIGN_IN_SUCCESS, payload: { user } })
+            yield put(replace('/people'))
+        } else {
+            yield put({ type: SIGN_OUT_SUCCESS })
+        }
     }
 }
-//
-// export function * watchAuthStateChangeSaga() : SagaIterator {
-//     while(true) {
-//
-//     }
-// }
 
 export function* saga(): SagaIterator {
-    yield all([signUpSaga(), signInSaga(), watchStatusChangeSaga()])
-}
+    yield spawn(syncStatusChangeSaga)
 
-firebase.auth().onAuthStateChanged(user => {
-    if (!user) return
-    //TODO remove global window
-    window.store.dispatch({
-        type: SIGN_IN_SUCCESS,
-        payload: { user },
-    })
-})
+    yield all([signUpSaga(), signInSaga()])
+}
