@@ -127,8 +127,12 @@ export default function reducer(
                     .set('loaded', Object.keys(payload).length < 10)
             )
         case SELECT_EVENT:
-            return state.update('selected', selected =>
-                selected.add(payload.uid)
+            return state.update(
+                'selected',
+                selected =>
+                    selected.has(payload.uid)
+                        ? selected.delete(payload.uid)
+                        : selected.add(payload.uid)
             )
         case DELETE_EVENT_SUCCESS:
             return state

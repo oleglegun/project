@@ -4,26 +4,52 @@ import { selectedEventListSelector } from '../../ducks/events'
 import { connect } from 'react-redux'
 import SelectedEventCard from './SelectedEventCard'
 import type { EventRecord } from '../../ducks/events'
+import { spring, TransitionMotion } from 'react-motion'
 
 type Props = {
     events: Array<EventRecord>,
 }
 
-type State = {}
-
-class SelectedEvents extends React.Component<Props, State> {
+class SelectedEvents extends React.Component<Props> {
     static defaultProps = {}
-
-    state = {}
 
     render() {
         return (
-            <div>
-                {this.props.events.map(event => (
-                    <SelectedEventCard key={event.uid} event={event} />
-                ))}
-            </div>
+            <TransitionMotion
+                styles={this.getStyles()}
+                willEnter={this.willEnter}
+                willLeave={this.willLeave}
+            >
+                {interpolatedData => (
+                    <div>
+                        {interpolatedData.map(element => (
+                            <span key={element.key} style={element.style}>
+                                <SelectedEventCard event={element.data} />
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </TransitionMotion>
         )
+    }
+
+    willEnter() {
+        return {
+            opacity: 0,
+        }
+    }
+
+    willLeave() {
+        return { opacity: spring(0, { stiffness: 50, damping: 5 }) }
+    }
+    getStyles() {
+        return this.props.events.map(event => ({
+            key: event.uid,
+            style: {
+                opacity: spring(1),
+            },
+            data: event,
+        }))
     }
 }
 

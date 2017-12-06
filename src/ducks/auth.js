@@ -181,7 +181,7 @@ export function* watchStatusChangeSaga(): SagaIterator {
     while (true) {
         yield take(SIGN_IN_SUCCESS)
 
-        yield put(replace('/people'))
+        yield put(replace('/admin'))
     }
 }
 //

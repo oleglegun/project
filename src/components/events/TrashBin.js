@@ -3,32 +3,51 @@ import * as React from 'react'
 import { DropTarget, type ConnectDropTarget } from 'react-dnd'
 import { connect } from 'react-redux'
 import { deleteEvent } from '../../ducks/events'
+import { Motion, spring, presets } from 'react-motion'
 
 type Props = {
     connectDropTarget: ConnectDropTarget,
     isHovered: boolean,
 }
 
-type State = {}
-
-class TrashBin extends React.Component<Props, State> {
-    static defaultProps = {}
-
-    state = {}
-
+class TrashBin extends React.Component<Props> {
     render() {
         const { connectDropTarget } = this.props
-        return connectDropTarget(<div style={this.getStyles()}>Trash</div>)
-    }
 
-    getStyles = () => ({
-        position: 'absolute',
-        width: '100px',
-        height: '100px',
-        right: '0',
-        top: '0',
-        backgroundColor: this.props.isHovered ? '#ffaaaa' : '#ffd4d4',
-    })
+        const styles = {
+            position: 'absolute',
+            width: '100px',
+            height: '100px',
+            right: '0',
+            top: '0',
+            backgroundColor: this.props.isHovered ? '#ffaaaa' : '#ffd4d4',
+        }
+
+        const toCSS = scale => ({ transform: `scale(${scale})` })
+
+        return (
+            // $FlowFixMe
+            <Motion
+                defaultStyle={{ scale: 0 }}
+                style={{
+                    scale: spring(1, presets.wobbly),
+                }}
+            >
+                {({ scale }) =>
+                    connectDropTarget(
+                        <div
+                            style={{
+                                ...styles,
+                                ...toCSS(scale),
+                            }}
+                        >
+                            Trash
+                        </div>
+                    )
+                }
+            </Motion>
+        )
+    }
 }
 
 const spec = {
