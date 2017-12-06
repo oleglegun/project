@@ -14,6 +14,11 @@ class SelectedEvents extends React.Component<Props> {
     static defaultProps = {}
 
     render() {
+        const toCSS = scale => ({ transform: `scale(${scale})` })
+        const styles = {
+            float: 'left',
+        }
+
         return (
             <TransitionMotion
                 styles={this.getStyles()}
@@ -23,9 +28,15 @@ class SelectedEvents extends React.Component<Props> {
                 {interpolatedData => (
                     <div>
                         {interpolatedData.map(element => (
-                            <span key={element.key} style={element.style}>
+                            <div
+                                key={element.key}
+                                style={{
+                                    ...styles,
+                                    ...toCSS(element.style.scale),
+                                }}
+                            >
                                 <SelectedEventCard event={element.data} />
-                            </span>
+                            </div>
                         ))}
                     </div>
                 )}
@@ -35,18 +46,18 @@ class SelectedEvents extends React.Component<Props> {
 
     willEnter() {
         return {
-            opacity: 0,
+            scale: 0,
         }
     }
 
     willLeave() {
-        return { opacity: spring(0, { stiffness: 50, damping: 5 }) }
+        return { scale: spring(0, { stiffness: 239, damping: 25 }) }
     }
     getStyles() {
         return this.props.events.map(event => ({
             key: event.uid,
             style: {
-                opacity: spring(1),
+                scale: spring(1, { stiffness: 239, damping: 25 }),
             },
             data: event,
         }))

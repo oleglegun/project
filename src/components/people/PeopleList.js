@@ -25,11 +25,13 @@ class PeopleList extends React.Component<Props, State> {
     render() {
         return (
             <List
-                style={{ outline: '1px solid red' }}
+                style={{
+                    boxShadow: '0 0 5px 0 #ccc',
+                }}
                 rowCount={this.props.people.length}
-                height={200}
+                height={300}
                 width={500}
-                rowHeight={100}
+                rowHeight={50}
                 rowRenderer={this.rowRenderer}
             />
         )

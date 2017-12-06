@@ -6,7 +6,6 @@ import type { ConnectDragSource, ConnectDragPreview } from 'react-dnd'
 import type { Person } from '../../ducks/people'
 import DragPreview from './PersonDragPreview'
 
-
 type Props = {
     person: Person,
     style: {},
@@ -33,11 +32,11 @@ class PersonRow extends React.Component<Props, State> {
         return (
             <div style={{ ...style, opacity: isDragging ? 0.3 : 1 }}>
                 {connectDragSource(
-                    <h2>
+                    <div>
                         {person.firstName} {person.lastName}
-                    </h2>
+                    </div>
                 )}
-                <h3>{person.email}</h3>
+                <div>{person.email}</div>
             </div>
         )
     }
@@ -48,7 +47,7 @@ const spec = {
         return {
             // Can get this object with monitor.getItem() in DropTarget's drop()
             id: props.person.uid,
-            DragPreview
+            DragPreview,
         }
     },
 }
